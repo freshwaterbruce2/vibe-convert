@@ -1,6 +1,45 @@
-import { DocImage, QualityOption } from '../types';
+import { DocImage, QualityOption, ScanMode } from '../types';
 
-const processImage = (base64: string, quality: QualityOption): Promise<{data: string, width: number, height: number}> => {
+const applyFilters = (ctx: CanvasRenderingContext2D, width: number, height: number, mode: ScanMode) => {
+  if (mode === 'original') return;
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  // Contrast factor for 'document' mode
+  // Formula: factor = (259 * (contrast + 255)) / (255 * (259 - contrast))
+  // We use a contrast value of around 100 for a good document pop
+  const contrast = 100; 
+  const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+
+    // Grayscale (Luminance perception)
+    let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+    if (mode === 'document') {
+      // Apply Contrast
+      gray = factor * (gray - 128) + 128;
+      
+      // Simple Brightness Boost to clean up background
+      gray += 20;
+
+      // Clamp values
+      gray = Math.max(0, Math.min(255, gray));
+    }
+
+    data[i] = gray;
+    data[i + 1] = gray;
+    data[i + 2] = gray;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+};
+
+const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode): Promise<{data: string, width: number, height: number}> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.src = base64;
@@ -46,6 +85,9 @@ const processImage = (base64: string, quality: QualityOption): Promise<{data: st
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
+      // Apply Filter (Grayscale / High Contrast)
+      applyFilters(ctx, targetWidth, targetHeight, scanMode);
+
       const data = canvas.toDataURL('image/jpeg', jpgQuality);
       resolve({ data, width: targetWidth, height: targetHeight });
     };
@@ -53,7 +95,7 @@ const processImage = (base64: string, quality: QualityOption): Promise<{data: st
   });
 };
 
-export const generatePDFBlob = async (images: DocImage[], quality: QualityOption): Promise<Blob> => {
+export const generatePDFBlob = async (images: DocImage[], quality: QualityOption, scanMode: ScanMode): Promise<Blob> => {
   if (!window.jspdf) {
     throw new Error("jsPDF library not loaded");
   }
@@ -69,8 +111,8 @@ export const generatePDFBlob = async (images: DocImage[], quality: QualityOption
       doc.addPage();
     }
 
-    // Process image based on selected quality
-    const processed = await processImage(image.base64, quality);
+    // Process image based on selected quality and scan mode
+    const processed = await processImage(image.base64, quality, scanMode);
 
     const pdfWidth = doc.internal.pageSize.getWidth();
     const pdfHeight = doc.internal.pageSize.getHeight();

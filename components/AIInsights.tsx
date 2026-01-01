@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Loader2, CheckCircle2, FileText, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle2, FileText, AlertCircle, Terminal, Cpu, Database } from 'lucide-react';
 import { AIAnalysisResult } from '../types';
 
 interface AIInsightsProps {
@@ -27,84 +27,130 @@ const AIInsights: React.FC<AIInsightsProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-          <Sparkles className="w-5 h-5 text-purple-600 mr-2" />
-          AI Document Assistant
-        </h2>
-        
-        {!analysis && !isAnalyzing && (
-          <button
-            onClick={onAnalyze}
-            disabled={!hasImages}
-            className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Analyze & Name
-          </button>
-        )}
-      </div>
+    <div className="relative bg-slate-900 rounded-xl border border-slate-800 overflow-hidden mt-6">
+      {/* Decorative top border gradient */}
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-50" />
 
-      {isAnalyzing && (
-        <div className="flex flex-col items-center justify-center py-8 text-gray-500 bg-gray-50 rounded-lg animate-pulse">
-          <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-3" />
-          <p className="text-sm">Reading documents with Gemini 2.5...</p>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-white flex items-center tracking-tight">
+            <Terminal className="w-5 h-5 text-purple-400 mr-2.5" />
+            NEURAL_ANALYSIS_UNIT
+          </h2>
+          
+          {!analysis && (
+            <button
+              onClick={onAnalyze}
+              disabled={!hasImages || isAnalyzing}
+              className="group relative inline-flex items-center justify-center px-4 py-2 font-mono text-xs font-medium text-white transition-all duration-200 bg-purple-600/10 border border-purple-500/50 rounded-lg hover:bg-purple-600 hover:border-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-500 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></span>
+              {isAnalyzing ? (
+                <span className="relative flex items-center">
+                  <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin text-purple-300" />
+                  PROCESSING...
+                </span>
+              ) : (
+                <span className="relative flex items-center text-purple-300 group-hover:text-white">
+                  <Sparkles className="w-3.5 h-3.5 mr-2" />
+                  INITIATE_SCAN
+                </span>
+              )}
+            </button>
+          )}
         </div>
-      )}
 
-      {analysis && !isAnalyzing && (
-        <div className="space-y-5 animate-in fade-in duration-500">
-          {/* Summary Section */}
-          <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
-            <div className="flex items-start">
-              <FileText className="w-5 h-5 text-purple-600 mt-0.5 mr-3 flex-shrink-0" />
-              <div>
-                <h3 className="text-sm font-semibold text-purple-900 mb-1">
-                  Document Content ({analysis.documentType})
-                </h3>
-                <p className="text-sm text-purple-800 leading-relaxed">
-                  {analysis.summary}
-                </p>
+        {isAnalyzing && (
+          <div className="flex flex-col items-center justify-center py-12 border border-dashed border-slate-800 bg-slate-950/50 rounded-lg">
+            <div className="relative">
+              <div className="absolute inset-0 bg-purple-500 blur-xl opacity-20 animate-pulse"></div>
+              <Loader2 className="relative w-10 h-10 text-purple-500 animate-spin" />
+            </div>
+            <p className="mt-4 text-xs font-mono text-purple-400 animate-pulse">ACCESSING GEMINI NEURAL NET...</p>
+            <p className="text-[10px] font-mono text-slate-600 mt-2">EXTRACTING_KEY_VALUES...</p>
+          </div>
+        )}
+
+        {analysis && !isAnalyzing && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {/* Summary Section */}
+            <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-5">
+              <div className="flex items-start">
+                <div className="mt-1 mr-4 p-1.5 bg-slate-900 rounded border border-slate-800">
+                   <Cpu className="w-4 h-4 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-500 font-mono uppercase mb-2">
+                    DETECTED_CONTENT: <span className="text-purple-400">{analysis.documentType}</span>
+                  </h3>
+                  <p className="text-sm text-slate-300 leading-relaxed font-light">
+                    {analysis.summary}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Filename Section */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Filename (Preview)
-            </label>
-            <div className="flex rounded-md shadow-sm">
-              <input
-                type="text"
-                value={filename}
-                onChange={handleNameChange}
-                className="flex-1 min-w-0 block w-full px-3 py-2 rounded-l-md border border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500"
-                placeholder="filename_here"
-              />
-              <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                .pdf
-              </span>
-            </div>
-            {!editedName && (
-              <p className="mt-1.5 text-xs text-green-600 flex items-center">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-                AI suggested name applied
-              </p>
+            {/* Extracted Data Grid - NEW FEATURE */}
+            {analysis.extractedData && analysis.extractedData.length > 0 && (
+              <div className="relative">
+                <div className="flex items-center mb-3">
+                  <Database className="w-4 h-4 text-cyan-500 mr-2" />
+                  <h3 className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider">
+                    Extracted_Data_Points
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {analysis.extractedData.map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      className="group bg-slate-950/80 border border-slate-800/60 p-3 rounded hover:border-cyan-500/30 transition-colors"
+                    >
+                      <div className="text-[10px] font-mono text-slate-500 uppercase mb-1">{item.label}</div>
+                      <div className="text-sm font-mono text-cyan-400 truncate" title={item.value}>
+                        {item.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-          </div>
-        </div>
-      )}
 
-      {!analysis && !isAnalyzing && hasImages && (
-        <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg flex items-start">
-          <AlertCircle className="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" />
-          <p>
-            Click "Analyze & Name" to let Gemini scan your documents, auto-generate a summary, and suggest a professional filename before you create the PDF.
-          </p>
-        </div>
-      )}
+            {/* Filename Section */}
+            <div className="pt-2 border-t border-slate-800/50">
+              <label className="block text-[10px] font-mono font-medium text-slate-500 mb-2 uppercase tracking-wider">
+                Output_Filename_Structure
+              </label>
+              <div className="flex group">
+                <input
+                  type="text"
+                  value={filename}
+                  onChange={handleNameChange}
+                  className="flex-1 bg-slate-950 border border-slate-700 border-r-0 rounded-l-md px-4 py-2.5 text-sm font-mono text-cyan-400 placeholder-slate-700 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                  placeholder="filename_here"
+                />
+                <span className="inline-flex items-center px-4 rounded-r-md border border-slate-700 bg-slate-900 text-slate-500 text-sm font-mono border-l-0">
+                  .pdf
+                </span>
+              </div>
+              {!editedName && (
+                <p className="mt-2 text-[10px] text-green-500 font-mono flex items-center">
+                  <CheckCircle2 className="w-3 h-3 mr-1.5" />
+                  AI_NAMING_PROTOCOL_ACTIVE
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!analysis && !isAnalyzing && hasImages && (
+          <div className="text-sm text-slate-400 bg-slate-950/30 border border-slate-800 p-4 rounded-lg flex items-start">
+            <AlertCircle className="w-5 h-5 text-slate-600 mr-3 flex-shrink-0" />
+            <p className="font-light">
+              <span className="text-white font-medium">System Ready.</span> Awaiting initiation of analysis sequence for content summarization, data extraction, and smart file naming.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

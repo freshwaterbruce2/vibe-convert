@@ -30,9 +30,10 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
     Analyze these document images. They are being compiled into a single PDF.
     
     1. Identify the document type (e.g., Invoice, Contract, Notes, Receipt).
-    2. Suggest a professional filename in snake_case (e.g., medical_invoice_oct_2023). 
-       Do not include the file extension.
+    2. Suggest a professional filename in snake_case (e.g., medical_invoice_oct_2023). Do not include the file extension.
     3. Write a very brief (1-2 sentence) summary of what these documents contain.
+    4. Extract 4-6 key data points relevant to this document type (e.g. "Total Amount", "Date", "Vendor Name", "Invoice ID", "Subject", "Signatories").
+       Return them as a list of labels and values.
   `;
 
   parts.push({ text: prompt });
@@ -50,9 +51,19 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
           properties: {
             suggestedFilename: { type: Type.STRING },
             summary: { type: Type.STRING },
-            documentType: { type: Type.STRING }
+            documentType: { type: Type.STRING },
+            extractedData: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  label: { type: Type.STRING },
+                  value: { type: Type.STRING }
+                }
+              }
+            }
           },
-          required: ["suggestedFilename", "summary", "documentType"]
+          required: ["suggestedFilename", "summary", "documentType", "extractedData"]
         }
       }
     });
