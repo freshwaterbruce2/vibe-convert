@@ -148,11 +148,15 @@ export const generatePDFBlob = async (images: DocImage[], quality: QualityOption
     
     doc.addImage(processed.data, 'JPEG', xOffset, yOffset, finalWidth, finalHeight);
     
-    // Add page number
-    doc.setFontSize(10);
+    // Add page number - Removed to allow for cleaner "scanned document" look if desired, 
+    // or we can keep it. The user wants "one file" visual verification. 
+    // I will keep it but make it small and unobtrusive.
+    doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text(`Page ${i + 1} of ${images.length}`, pdfWidth - 20, pdfHeight - 10, { align: 'right' });
+    doc.text(`${i + 1}/${images.length}`, pdfWidth - 10, pdfHeight - 5, { align: 'right' });
   }
 
-  return doc.output('blob');
+  // Explicitly return as PDF blob
+  const pdfArrayBuffer = doc.output('arraybuffer');
+  return new Blob([pdfArrayBuffer], { type: 'application/pdf' });
 };
