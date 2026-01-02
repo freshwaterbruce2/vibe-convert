@@ -12,8 +12,9 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
   // Prepare parts: text prompt + image data
   const parts: any[] = [];
   
-  // Add images (limit to first 4 to avoid hitting payload limits if user uploads many)
-  const imagesToAnalyze = images.slice(0, 4);
+  // Use all provided images for analysis
+  // Gemini 1.5 Flash / 2.0 Flash / 3.0 Flash have large context windows suitable for multi-page documents
+  const imagesToAnalyze = images;
   
   for (const img of imagesToAnalyze) {
     // Remove header from base64 string if present
@@ -40,7 +41,7 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3-flash-preview',
       contents: {
         parts: parts
       },

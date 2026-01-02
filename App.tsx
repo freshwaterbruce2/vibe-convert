@@ -11,6 +11,7 @@ import { FileOutput, Trash2, Layers, Zap, Image, FileText, Settings2 } from 'luc
 
 const App: React.FC = () => {
   const [images, setImages] = useState<DocImage[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysisResult | null>(null);
   const [filename, setFilename] = useState('paperwork_scan');
@@ -79,8 +80,23 @@ const App: React.FC = () => {
     setAnalysis(null);
   }, []);
 
+  const handleToggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
   const handleRemoveImage = (id: string) => {
     setImages(prev => prev.filter(img => img.id !== id));
+    if (selectedIds.has(id)) {
+      const newSelected = new Set(selectedIds);
+      newSelected.delete(id);
+      setSelectedIds(newSelected);
+    }
   };
 
   const handleMoveImage = (index: number, direction: 'up' | 'down') => {
@@ -96,9 +112,14 @@ const App: React.FC = () => {
   const handleAnalyze = async () => {
     if (images.length === 0) return;
     
+    // Determine which images to analyze
+    const targetImages = selectedIds.size > 0 
+      ? images.filter(img => selectedIds.has(img.id))
+      : images;
+
     setIsAnalyzing(true);
     try {
-      const result = await analyzeDocuments(images);
+      const result = await analyzeDocuments(targetImages);
       setAnalysis(result);
       if (result.suggestedFilename) {
         setFilename(result.suggestedFilename);
@@ -116,7 +137,11 @@ const App: React.FC = () => {
     
     setIsGenerating(true);
     try {
-      const blob = await generatePDFBlob(images, quality, scanMode);
+      const targetImages = selectedIds.size > 0 
+        ? images.filter(img => selectedIds.has(img.id))
+        : images;
+
+      const blob = await generatePDFBlob(targetImages, quality, scanMode);
       setPdfBlob(blob);
     } catch (error) {
       console.error("PDF Generation failed", error);
@@ -129,6 +154,7 @@ const App: React.FC = () => {
   const handleClearAll = () => {
     if (window.confirm("Are you sure you want to clear all images?")) {
       setImages([]);
+      setSelectedIds(new Set());
       setAnalysis(null);
       setFilename('paperwork_scan');
     }
@@ -154,6 +180,8 @@ const App: React.FC = () => {
         {/* Document Grid */}
         <DocumentList 
           images={images} 
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
           onRemove={handleRemoveImage}
           onMove={handleMoveImage}
         />
@@ -167,6 +195,7 @@ const App: React.FC = () => {
                 isAnalyzing={isAnalyzing}
                 onAnalyze={handleAnalyze}
                 hasImages={images.length > 0}
+                selectedCount={selectedIds.size}
                 filename={filename}
                 setFilename={setFilename}
                />
@@ -264,7 +293,7 @@ const App: React.FC = () => {
                       {isGenerating ? 'COMPILING...' : (
                         <>
                           <Zap className="w-4 h-4 mr-2" />
-                          EXECUTE_COMPILE
+                          {selectedIds.size > 0 ? `COMPILE (${selectedIds.size})` : 'EXECUTE_COMPILE'}
                         </>
                       )}
                     </span>

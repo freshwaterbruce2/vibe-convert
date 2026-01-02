@@ -23,7 +23,7 @@ const Header: React.FC = () => {
           <div className="flex items-center space-x-2 text-[11px] font-mono text-cyan-400 bg-cyan-950/20 px-3 py-1.5 rounded-full border border-cyan-900/50 shadow-[0_0_10px_rgba(34,211,238,0.1)]">
             <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             <Sparkles className="w-3 h-3" />
-            <span>GEMINI_2.5_FLASH: ONLINE</span>
+            <span>GEMINI_3_FLASH: ONLINE</span>
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ interface AIInsightsProps {
   isAnalyzing: boolean;
   onAnalyze: () => void;
   hasImages: boolean;
+  selectedCount: number;
   filename: string;
   setFilename: (name: string) => void;
 }
@@ -16,6 +17,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({
   isAnalyzing, 
   onAnalyze, 
   hasImages,
+  selectedCount,
   filename,
   setFilename
 }) => {
@@ -42,18 +44,22 @@ const AIInsights: React.FC<AIInsightsProps> = ({
             <button
               onClick={onAnalyze}
               disabled={!hasImages || isAnalyzing}
-              className="group relative inline-flex items-center justify-center px-4 py-2 font-mono text-xs font-medium text-white transition-all duration-200 bg-purple-600/10 border border-purple-500/50 rounded-lg hover:bg-purple-600 hover:border-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-500 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`group relative inline-flex items-center justify-center px-4 py-2 font-mono text-xs font-medium text-white transition-all duration-200 border rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-500 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed ${
+                selectedCount > 0 
+                  ? 'bg-purple-600 border-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.3)] hover:bg-purple-500' 
+                  : 'bg-purple-600/10 border-purple-500/50 hover:bg-purple-600 hover:border-purple-500'
+              }`}
             >
-              <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></span>
+              <span className={`absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black ${selectedCount > 0 ? 'hidden' : 'block'}`}></span>
               {isAnalyzing ? (
                 <span className="relative flex items-center">
                   <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin text-purple-300" />
                   PROCESSING...
                 </span>
               ) : (
-                <span className="relative flex items-center text-purple-300 group-hover:text-white">
+                <span className={`relative flex items-center ${selectedCount > 0 ? 'text-white' : 'text-purple-300 group-hover:text-white'}`}>
                   <Sparkles className="w-3.5 h-3.5 mr-2" />
-                  INITIATE_SCAN
+                  {selectedCount > 0 ? `ANALYZE SELECTION (${selectedCount})` : 'INITIATE SCAN (ALL)'}
                 </span>
               )}
             </button>
@@ -66,8 +72,14 @@ const AIInsights: React.FC<AIInsightsProps> = ({
               <div className="absolute inset-0 bg-purple-500 blur-xl opacity-20 animate-pulse"></div>
               <Loader2 className="relative w-10 h-10 text-purple-500 animate-spin" />
             </div>
-            <p className="mt-4 text-xs font-mono text-purple-400 animate-pulse">ACCESSING GEMINI NEURAL NET...</p>
-            <p className="text-[10px] font-mono text-slate-600 mt-2">EXTRACTING_KEY_VALUES...</p>
+            <p className="mt-4 text-xs font-mono text-purple-400 animate-pulse">
+              ACCESSING GEMINI NEURAL NET...
+            </p>
+            <p className="text-[10px] font-mono text-slate-600 mt-2">
+              {selectedCount > 0 
+                ? `PROCESSING_BATCH: ${selectedCount} FILES...` 
+                : 'PROCESSING_FULL_BATCH...'}
+            </p>
           </div>
         )}
 
@@ -90,7 +102,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({
               </div>
             </div>
 
-            {/* Extracted Data Grid - NEW FEATURE */}
+            {/* Extracted Data Grid */}
             {analysis.extractedData && analysis.extractedData.length > 0 && (
               <div className="relative">
                 <div className="flex items-center mb-3">
@@ -146,7 +158,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({
           <div className="text-sm text-slate-400 bg-slate-950/30 border border-slate-800 p-4 rounded-lg flex items-start">
             <AlertCircle className="w-5 h-5 text-slate-600 mr-3 flex-shrink-0" />
             <p className="font-light">
-              <span className="text-white font-medium">System Ready.</span> Awaiting initiation of analysis sequence for content summarization, data extraction, and smart file naming.
+              <span className="text-white font-medium">System Ready.</span> Select specific images or scan entire batch for content analysis.
             </p>
           </div>
         )}
