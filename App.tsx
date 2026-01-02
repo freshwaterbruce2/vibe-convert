@@ -7,7 +7,7 @@ import PreviewModal from './components/PreviewModal';
 import { DocImage, AIAnalysisResult, QualityOption, ScanMode } from './types';
 import { analyzeDocuments } from './services/geminiService';
 import { generatePDFBlob } from './services/pdfService';
-import { FileOutput, Trash2, Layers, Zap, Image, FileText, Settings2 } from 'lucide-react';
+import { FileOutput, Trash2, Layers, Zap, Image, FileText, Settings2, Check } from 'lucide-react';
 
 const App: React.FC = () => {
   const [images, setImages] = useState<DocImage[]>([]);
@@ -227,6 +227,7 @@ const App: React.FC = () => {
                     >
                       <Image className="w-3.5 h-3.5 mr-2.5 opacity-70" />
                       <span>PHOTO_ORIGINAL</span>
+                      {scanMode === 'original' && <Check className="w-3 h-3 ml-auto" />}
                     </button>
                     <button
                       onClick={() => setScanMode('grayscale')}
@@ -238,6 +239,7 @@ const App: React.FC = () => {
                     >
                       <div className="w-3.5 h-3.5 mr-2.5 rounded-sm bg-gradient-to-br from-white to-black opacity-70" />
                       <span>GRAYSCALE</span>
+                      {scanMode === 'grayscale' && <Check className="w-3 h-3 ml-auto" />}
                     </button>
                     <button
                       onClick={() => setScanMode('document')}
@@ -249,7 +251,11 @@ const App: React.FC = () => {
                     >
                       <FileText className="w-3.5 h-3.5 mr-2.5 opacity-70" />
                       <span>DOCUMENT_ENHANCED</span>
-                      <span className="ml-auto text-[9px] bg-cyan-900/40 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-800/50">REC</span>
+                      {scanMode === 'document' ? (
+                         <Check className="w-3 h-3 ml-auto" />
+                      ) : (
+                         <span className="ml-auto text-[9px] bg-cyan-900/40 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-800/50">REC</span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -265,21 +271,23 @@ const App: React.FC = () => {
                         key={q}
                         onClick={() => setQuality(q)}
                         className={`
-                          px-2 py-2.5 text-xs font-mono font-medium rounded border text-center uppercase transition-all duration-200
+                          flex flex-col items-center justify-center
+                          px-2 py-3 text-[10px] font-mono font-medium rounded border text-center uppercase transition-all duration-200 relative
                           ${quality === q 
                             ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.2)]' 
                             : 'bg-slate-950 border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-300'
                           }
                         `}
                       >
-                        {q}
+                        <span className="mb-1">{q}</span>
+                        {quality === q && <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-cyan-500" />}
                       </button>
                     ))}
                   </div>
                   <p className="mt-3 text-[10px] text-slate-500 font-mono border-l-2 border-slate-700 pl-2">
-                    {quality === 'low' && "OPTIMIZED: FAST EMAIL"}
-                    {quality === 'medium' && "OPTIMIZED: BALANCED"}
-                    {quality === 'high' && "OPTIMIZED: PRINT"}
+                    {quality === 'low' && "OPTIMIZED: SMALL SIZE (EMAIL)"}
+                    {quality === 'medium' && "OPTIMIZED: BALANCED (STANDARD)"}
+                    {quality === 'high' && "OPTIMIZED: MAX DETAIL (PRINT)"}
                   </p>
                 </div>
 

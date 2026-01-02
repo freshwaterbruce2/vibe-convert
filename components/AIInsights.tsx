@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Loader2, CheckCircle2, FileText, AlertCircle, Terminal, Cpu, Database } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle2, FileText, AlertCircle, Terminal, Cpu, Database, Copy, Check, FileJson } from 'lucide-react';
 import { AIAnalysisResult } from '../types';
 
 interface AIInsightsProps {
@@ -22,10 +22,34 @@ const AIInsights: React.FC<AIInsightsProps> = ({
   setFilename
 }) => {
   const [editedName, setEditedName] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copiedAll, setCopiedAll] = useState(false);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilename(e.target.value);
     setEditedName(true);
+  };
+
+  const copyToClipboard = async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  const copyAllAsJSON = async () => {
+    if (!analysis?.extractedData) return;
+    try {
+      const jsonStr = JSON.stringify(analysis.extractedData, null, 2);
+      await navigator.clipboard.writeText(jsonStr);
+      setCopiedAll(true);
+      setTimeout(() => setCopiedAll(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy JSON: ', err);
+    }
   };
 
   return (
@@ -105,25 +129,56 @@ const AIInsights: React.FC<AIInsightsProps> = ({
             {/* Extracted Data Grid */}
             {analysis.extractedData && analysis.extractedData.length > 0 && (
               <div className="relative">
-                <div className="flex items-center mb-3">
-                  <Database className="w-4 h-4 text-cyan-500 mr-2" />
-                  <h3 className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider">
-                    Extracted_Data_Points
-                  </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <Database className="w-4 h-4 text-cyan-500 mr-2" />
+                    <h3 className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider">
+                      Extracted_Form_Data
+                    </h3>
+                  </div>
+                  <button 
+                    onClick={copyAllAsJSON}
+                    className="flex items-center space-x-1.5 text-[10px] font-mono text-slate-500 hover:text-cyan-400 transition-colors"
+                  >
+                    {copiedAll ? <Check className="w-3 h-3" /> : <FileJson className="w-3 h-3" />}
+                    <span>{copiedAll ? 'COPIED_JSON' : 'COPY_JSON'}</span>
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {analysis.extractedData.map((item, idx) => (
                     <div 
                       key={idx} 
-                      className="group bg-slate-950/80 border border-slate-800/60 p-3 rounded hover:border-cyan-500/30 transition-colors"
+                      className="group relative bg-slate-950/80 border border-slate-800/60 p-3 rounded hover:border-cyan-500/30 transition-all flex flex-col justify-between"
                     >
-                      <div className="text-[10px] font-mono text-slate-500 uppercase mb-1">{item.label}</div>
-                      <div className="text-sm font-mono text-cyan-400 truncate" title={item.value}>
+                      <div className="flex justify-between items-start mb-1">
+                         <div className="text-[10px] font-mono text-slate-500 uppercase truncate pr-4">{item.label}</div>
+                         <button
+                           onClick={() => copyToClipboard(item.value, idx)}
+                           className="text-slate-600 hover:text-cyan-400 focus:outline-none transition-colors"
+                           title="Copy value"
+                         >
+                           {copiedIndex === idx ? (
+                             <Check className="w-3.5 h-3.5 text-green-500" />
+                           ) : (
+                             <Copy className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                           )}
+                         </button>
+                      </div>
+                      
+                      <div 
+                        className="text-sm font-mono text-cyan-400 truncate cursor-pointer" 
+                        title="Click to copy"
+                        onClick={() => copyToClipboard(item.value, idx)}
+                      >
                         {item.value}
                       </div>
                     </div>
                   ))}
                 </div>
+                <p className="mt-2 text-[10px] text-slate-600 font-mono text-center">
+                  * Click any value to copy to clipboard for easy form filling.
+                </p>
               </div>
             )}
 

@@ -13,7 +13,6 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
   const parts: any[] = [];
   
   // Use all provided images for analysis
-  // Gemini 1.5 Flash / 2.0 Flash / 3.0 Flash have large context windows suitable for multi-page documents
   const imagesToAnalyze = images;
   
   for (const img of imagesToAnalyze) {
@@ -28,13 +27,17 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
   }
 
   const prompt = `
-    Analyze these document images. They are being compiled into a single PDF.
+    Analyze these document images as a "Form Data Extractor".
     
-    1. Identify the document type (e.g., Invoice, Contract, Notes, Receipt).
-    2. Suggest a professional filename in snake_case (e.g., medical_invoice_oct_2023). Do not include the file extension.
-    3. Write a very brief (1-2 sentence) summary of what these documents contain.
-    4. Extract 4-6 key data points relevant to this document type (e.g. "Total Amount", "Date", "Vendor Name", "Invoice ID", "Subject", "Signatories").
-       Return them as a list of labels and values.
+    1. Identify the document type (e.g., Medical Intake Form, Tax Invoice, Rental Agreement).
+    2. Suggest a professional filename in snake_case.
+    3. Write a brief summary.
+    4. DATA EXTRACTION TASK:
+       - Extract ALL visible form fields and their values.
+       - Include both TYPED and HANDWRITTEN text.
+       - Return them as a list of labels and values (e.g., Label: "Patient Name", Value: "John Doe").
+       - If the document is a filled form, capture as many fields as possible (up to 20 key fields) to help the user digitize this record.
+       - Clean up the values (e.g., fix obvious OCR errors in handwriting).
   `;
 
   parts.push({ text: prompt });

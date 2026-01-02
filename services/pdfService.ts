@@ -50,19 +50,19 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
       // Define constraints based on quality selection
       switch (quality) {
         case 'low':
-          // ~ 96 DPI equivalent - compact size
-          targetWidth = Math.min(img.width, 800); 
-          jpgQuality = 0.5;
+          // ~ 1000px width - Good for screen viewing, small file size
+          targetWidth = Math.min(img.width, 1000); 
+          jpgQuality = 0.6;
           break;
         case 'medium':
-          // ~ 150 DPI equivalent - balanced for email
+          // ~ 1600px width - Standard balanced profile
           targetWidth = Math.min(img.width, 1600); 
           jpgQuality = 0.75;
           break;
         case 'high':
-          // ~ 250-300 DPI equivalent - high quality print
-          targetWidth = Math.min(img.width, 2500); 
-          jpgQuality = 0.92;
+          // ~ 2400px width - High quality for print, heavier file
+          targetWidth = Math.min(img.width, 2400); 
+          jpgQuality = 0.85;
           break;
       }
 
@@ -79,6 +79,10 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
         reject(new Error("Could not get canvas context"));
         return;
       }
+
+      // Fill white background for transparency handling (important for PNGs)
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
 
       // Draw with smoothing
       ctx.imageSmoothingEnabled = true;
@@ -148,9 +152,7 @@ export const generatePDFBlob = async (images: DocImage[], quality: QualityOption
     
     doc.addImage(processed.data, 'JPEG', xOffset, yOffset, finalWidth, finalHeight);
     
-    // Add page number - Removed to allow for cleaner "scanned document" look if desired, 
-    // or we can keep it. The user wants "one file" visual verification. 
-    // I will keep it but make it small and unobtrusive.
+    // Small discrete page number
     doc.setFontSize(8);
     doc.setTextColor(150);
     doc.text(`${i + 1}/${images.length}`, pdfWidth - 10, pdfHeight - 5, { align: 'right' });
