@@ -112,7 +112,7 @@ const AIInsights: React.FC<AIInsightsProps> = ({
         <button
           onClick={onAnalyze}
           disabled={!hasImages || isAnalyzing}
-          className={`group relative inline-flex items-center justify-center px-4 py-1.5 font-mono text-[10px] font-bold text-white transition-all duration-200 border rounded focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide overflow-hidden ${
+          className={`group relative inline-flex items-center justify-center px-4 py-1.5 font-mono text-[10px] font-bold text-white transition-all duration-200 border rounded focus:outline-none disabled:opacity-80 disabled:cursor-wait uppercase tracking-wide overflow-hidden ${
             selectedCount > 0 
               ? 'bg-purple-600/20 border-purple-500/50 text-purple-300 hover:bg-purple-600/40 hover:text-white hover:border-purple-400' 
               : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:border-slate-500'
@@ -120,8 +120,8 @@ const AIInsights: React.FC<AIInsightsProps> = ({
         >
           {isAnalyzing ? (
             <span className="flex items-center">
-              <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-              ANALYZING...
+              <Loader2 className="w-3 h-3 mr-2 animate-spin text-purple-400" />
+              <span className="animate-pulse">ANALYZING...</span>
             </span>
           ) : (
             <span className="flex items-center">

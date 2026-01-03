@@ -181,7 +181,8 @@ const App: React.FC = () => {
         ? images.filter(img => selectedIds.has(img.id))
         : images;
 
-      const blob = await generatePDFBlob(targetImages, quality, scanMode);
+      // Pass analysis result to PDF generator to include metadata/headers
+      const blob = await generatePDFBlob(targetImages, quality, scanMode, analysis);
       setPdfBlob(blob);
       addToast('success', 'Compilation Successful', 'PDF artifact generated and ready for review.');
     } catch (error) {

@@ -1,4 +1,4 @@
-import { DocImage, QualityOption, ScanMode } from '../types';
+import { DocImage, QualityOption, ScanMode, AIAnalysisResult } from '../types';
 
 const applyFilters = (ctx: CanvasRenderingContext2D, width: number, height: number, mode: ScanMode) => {
   if (mode === 'original') return;
@@ -99,7 +99,12 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
   });
 };
 
-export const generatePDFBlob = async (images: DocImage[], quality: QualityOption, scanMode: ScanMode): Promise<Blob> => {
+export const generatePDFBlob = async (
+  images: DocImage[], 
+  quality: QualityOption, 
+  scanMode: ScanMode,
+  analysis?: AIAnalysisResult | null
+): Promise<Blob> => {
   if (!window.jspdf) {
     throw new Error("jsPDF library not loaded");
   }
@@ -115,39 +120,80 @@ export const generatePDFBlob = async (images: DocImage[], quality: QualityOption
       doc.addPage();
     }
 
-    // Process image based on selected quality and scan mode
     const processed = await processImage(image.base64, quality, scanMode);
 
     const pdfWidth = doc.internal.pageSize.getWidth();
     const pdfHeight = doc.internal.pageSize.getHeight();
     
-    // Calculate dimensions to fit page while maintaining aspect ratio
+    let contentY = 0;
+    let contentHeight = pdfHeight;
+
+    // Apply header/metadata only on the first page if analysis exists
+    if (i === 0 && analysis) {
+      // Set PDF Metadata
+      doc.setProperties({
+        title: analysis.documentType,
+        subject: analysis.summary,
+        author: 'DocuFlow AI',
+        keywords: analysis.extractedData.map(d => d.label).join(', ')
+      });
+
+      // Visual Header
+      const margin = 10;
+      const headerHeight = 25;
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(60); // Dark Gray
+      doc.text(analysis.documentType.toUpperCase(), margin, margin + 5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100); // Lighter Gray
+      
+      // Split summary if too long
+      const summaryLines = doc.splitTextToSize(analysis.summary, pdfWidth - (margin * 2));
+      // Only take first 2 lines to save space
+      const displaySummary = summaryLines.length > 2 ? summaryLines.slice(0, 2) : summaryLines;
+      
+      doc.text(displaySummary, margin, margin + 11);
+      
+      // Draw a subtle line separator
+      doc.setDrawColor(200);
+      doc.line(margin, margin + 18, pdfWidth - margin, margin + 18);
+
+      // Adjust content area for image
+      contentY = headerHeight;
+      contentHeight = pdfHeight - headerHeight;
+    }
+
+    // Calculate dimensions to fit content area while maintaining aspect ratio
     const imgRatio = processed.width / processed.height;
-    const pageRatio = pdfWidth / pdfHeight;
+    const pageRatio = pdfWidth / contentHeight;
 
     let finalWidth = pdfWidth;
-    let finalHeight = pdfHeight;
+    let finalHeight = contentHeight;
     let xOffset = 0;
-    let yOffset = 0;
+    let yOffset = contentY;
 
     if (imgRatio > pageRatio) {
-      // Image is wider than page
+      // Image is wider than available content area
       finalHeight = pdfWidth / imgRatio;
-      yOffset = (pdfHeight - finalHeight) / 2;
+      yOffset = contentY + (contentHeight - finalHeight) / 2;
     } else {
-      // Image is taller than page
-      finalWidth = pdfHeight * imgRatio;
+      // Image is taller than available content area
+      finalWidth = contentHeight * imgRatio;
       xOffset = (pdfWidth - finalWidth) / 2;
     }
     
-    // Add margin if it fills the whole page too tightly
+    // Add margin if it fills the width too tightly
     const margin = 10;
     if (finalWidth > pdfWidth - margin * 2) {
         const scale = (pdfWidth - margin * 2) / finalWidth;
         finalWidth *= scale;
         finalHeight *= scale;
         xOffset = (pdfWidth - finalWidth) / 2;
-        yOffset = (pdfHeight - finalHeight) / 2;
+        yOffset = contentY + (contentHeight - finalHeight) / 2;
     }
     
     doc.addImage(processed.data, 'JPEG', xOffset, yOffset, finalWidth, finalHeight);
