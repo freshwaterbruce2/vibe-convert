@@ -3,9 +3,10 @@ import { Upload, Image as ImageIcon, ScanLine } from 'lucide-react';
 
 interface ImageUploaderProps {
   onImagesSelected: (files: FileList) => void;
+  variant?: 'hero' | 'compact';
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected }) => {
+const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected, variant = 'hero' }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -40,6 +41,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected }) => {
     }
   };
 
+  const isCompact = variant === 'compact';
+
   return (
     <div 
       className={`relative group rounded-lg transition-all duration-300 cursor-pointer overflow-hidden ${
@@ -73,35 +76,37 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected }) => {
         onChange={handleChange}
       />
       
-      <div className="relative z-10 flex flex-col items-center py-16 px-6">
-        <div className={`w-20 h-20 rounded-full bg-slate-950 border flex items-center justify-center mb-6 transition-all duration-500 relative ${
+      <div className={`relative z-10 flex flex-col items-center px-6 transition-all duration-500 ${isCompact ? 'py-8' : 'py-16'}`}>
+        <div className={`rounded-full bg-slate-950 border flex items-center justify-center mb-4 transition-all duration-500 relative ${
             isDragOver 
             ? 'border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.3)] scale-110' 
             : 'border-slate-700 shadow-inner group-hover:border-slate-600'
-        }`}>
+        } ${isCompact ? 'w-12 h-12' : 'w-20 h-20 mb-6'}`}>
           {/* Rotating Ring */}
           <div className={`absolute inset-0 rounded-full border border-dashed border-slate-600 transition-all duration-[10s] animate-[spin_10s_linear_infinite] opacity-30 ${isDragOver ? 'border-cyan-500 opacity-100' : ''}`}></div>
           
-          <Upload className={`w-8 h-8 transition-colors ${isDragOver ? 'text-cyan-400' : 'text-slate-400'}`} />
+          <Upload className={`transition-colors ${isCompact ? 'w-5 h-5' : 'w-8 h-8'} ${isDragOver ? 'text-cyan-400' : 'text-slate-400'}`} />
         </div>
         
-        <h3 className={`text-xl font-bold tracking-tight transition-colors ${isDragOver ? 'text-white' : 'text-slate-200'}`}>
-          Upload Documents
+        <h3 className={`font-bold tracking-tight transition-colors ${isDragOver ? 'text-white' : 'text-slate-200'} ${isCompact ? 'text-lg' : 'text-xl'}`}>
+          {isCompact ? 'Add More Pages' : 'Upload Documents'}
         </h3>
         <p className="text-slate-500 mt-2 text-sm font-mono max-w-sm text-center">
-          Drag & Drop files or Click to Browse
+          {isCompact ? 'Drag & Drop or Click' : 'Drag & Drop files or Click to Browse'}
         </p>
         
-        <div className="mt-8 flex justify-center space-x-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800">
-            <ScanLine className="w-3 h-3 mr-1.5 text-cyan-500" />
-            <span>OCR_READY</span>
+        {!isCompact && (
+          <div className="mt-8 flex justify-center space-x-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800">
+              <ScanLine className="w-3 h-3 mr-1.5 text-cyan-500" />
+              <span>OCR_READY</span>
+            </div>
+            <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800">
+              <ImageIcon className="w-3 h-3 mr-1.5 text-purple-500" />
+              <span>IMG_PROCESSOR</span>
+            </div>
           </div>
-          <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800">
-            <ImageIcon className="w-3 h-3 mr-1.5 text-purple-500" />
-            <span>IMG_PROCESSOR</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

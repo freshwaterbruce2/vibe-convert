@@ -203,203 +203,210 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 text-slate-200 font-sans selection:bg-cyan-500/30 selection:text-cyan-100">
+    <div className="min-h-screen pb-20 text-slate-200 font-sans selection:bg-cyan-500/30 selection:text-cyan-100 flex flex-col">
       <Header />
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Onboarding Hero (Only when empty) */}
-        {images.length === 0 && <OnboardingHero />}
-
-        {/* Dashboard Header (Only when active) */}
-        {images.length > 0 && (
-          <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between border-b border-slate-800/60 pb-6 animate-in slide-in-from-top-4 fade-in duration-500">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1 tracking-tight flex items-center">
-                <Binary className="w-5 h-5 mr-3 text-cyan-500" />
-                Active Workspace
-              </h2>
-              <p className="text-slate-500 text-sm font-light font-mono">
-                {images.length} FILE{images.length !== 1 && 'S'} QUEUED // READY FOR PROCESSING
-              </p>
-            </div>
-            
-            <div className="mt-4 md:mt-0 flex items-center space-x-4 bg-slate-900 px-4 py-2 rounded-lg border border-slate-800">
-              <div className="text-right">
-                <p className="text-[10px] text-slate-500 font-mono uppercase">Total Files</p>
-                <p className="text-xl font-bold text-white leading-none">{images.length}</p>
-              </div>
-              <div className="h-8 w-[1px] bg-slate-800"></div>
-              <div className="text-right">
-                <p className="text-[10px] text-slate-500 font-mono uppercase">Selection</p>
-                <p className="text-xl font-bold text-cyan-400 leading-none">{selectedIds.size > 0 ? selectedIds.size : 'ALL'}</p>
-              </div>
-            </div>
+        {/* State 1: Empty Workspace (Landing Page Mode) */}
+        {images.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[80vh] py-12">
+             <OnboardingHero />
+             <div className="w-full max-w-3xl mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+               <ImageUploader onImagesSelected={handleImagesSelected} variant="hero" />
+             </div>
           </div>
-        )}
-
-        {/* Upload Area */}
-        <ImageUploader onImagesSelected={handleImagesSelected} />
-
-        {/* Document Grid */}
-        <div ref={documentListRef}>
-          <DocumentList 
-            images={images} 
-            selectedIds={selectedIds}
-            onToggleSelect={handleToggleSelect}
-            onRemove={handleRemoveImage}
-            onMove={handleMoveImage}
-          />
-        </div>
-
-        {/* Actions & AI */}
-        {images.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8 animate-in slide-in-from-bottom-8 fade-in duration-700" ref={resultsRef}>
-            <div className="lg:col-span-8 space-y-8">
-               <AIInsights 
-                analysis={analysis}
-                isAnalyzing={isAnalyzing}
-                onAnalyze={handleAnalyze}
-                hasImages={images.length > 0}
-                selectedCount={selectedIds.size}
-                totalCount={images.length}
-                filename={filename}
-                setFilename={setFilename}
-               />
+        ) : (
+          /* State 2: Active Workspace */
+          <div className="py-8">
+            <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between border-b border-slate-800/60 pb-6 animate-in slide-in-from-top-4 fade-in duration-500">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1 tracking-tight flex items-center">
+                  <Binary className="w-5 h-5 mr-3 text-cyan-500" />
+                  Active Workspace
+                </h2>
+                <p className="text-slate-500 text-sm font-light font-mono">
+                  {images.length} FILE{images.length !== 1 && 'S'} QUEUED // READY FOR PROCESSING
+                </p>
+              </div>
+              
+              <div className="mt-4 md:mt-0 flex items-center space-x-4 bg-slate-900 px-4 py-2 rounded-lg border border-slate-800">
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-500 font-mono uppercase">Total Files</p>
+                  <p className="text-xl font-bold text-white leading-none">{images.length}</p>
+                </div>
+                <div className="h-8 w-[1px] bg-slate-800"></div>
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-500 font-mono uppercase">Selection</p>
+                  <p className="text-xl font-bold text-cyan-400 leading-none">{selectedIds.size > 0 ? selectedIds.size : 'ALL'}</p>
+                </div>
+              </div>
             </div>
 
-            <div className="lg:col-span-4">
-              <div className="bg-slate-900 rounded-xl border border-slate-700 p-1 sticky top-24 shadow-2xl relative overflow-hidden group">
-                {/* Metallic gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 to-slate-950/80 pointer-events-none"></div>
-                
-                <div className="relative bg-slate-950/90 rounded-lg p-5 border border-slate-800/50 backdrop-blur-sm">
-                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
-                    <div className="flex items-center">
-                      <div className="p-1.5 bg-cyan-950/30 rounded border border-cyan-900/50 mr-3">
-                        <Layers className="w-4 h-4 text-cyan-400" />
-                      </div>
-                      <h3 className="text-sm font-bold text-white font-mono tracking-wide uppercase">Compiler_Config</h3>
-                    </div>
-                    <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
-                  </div>
+            {/* Compact Uploader when working */}
+            <div className="mb-8">
+              <ImageUploader onImagesSelected={handleImagesSelected} variant="compact" />
+            </div>
 
-                  {/* Scan Mode Selector */}
-                  <div className="mb-6">
-                    <label className="block text-[10px] font-mono text-slate-500 mb-2 uppercase tracking-wider flex items-center">
-                      <Settings2 className="w-3 h-3 mr-1.5" />
-                      Filter_Matrix
-                    </label>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      <button
-                        onClick={() => setScanMode('original')}
-                        className={`
-                          flex flex-col items-center justify-center
-                          px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
-                          ${scanMode === 'original'
-                            ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
-                            : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
-                          }
-                        `}
-                      >
-                        <Image className="w-3.5 h-3.5 mb-1.5 opacity-80" />
-                        <span>RAW</span>
-                      </button>
+            {/* Document Grid */}
+            <div ref={documentListRef}>
+              <DocumentList 
+                images={images} 
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onRemove={handleRemoveImage}
+                onMove={handleMoveImage}
+              />
+            </div>
 
-                      <button
-                        onClick={() => setScanMode('grayscale')}
-                        className={`
-                          flex flex-col items-center justify-center
-                          px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
-                          ${scanMode === 'grayscale'
-                            ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
-                            : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
-                          }
-                        `}
-                      >
-                        <div className="w-3.5 h-3.5 mb-1.5 rounded-sm bg-gradient-to-br from-slate-200 to-slate-800 opacity-80 border border-slate-600" />
-                        <span>B&W</span>
-                      </button>
+            {/* Actions & AI */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8 animate-in slide-in-from-bottom-8 fade-in duration-700" ref={resultsRef}>
+              <div className="lg:col-span-8 space-y-8">
+                 <AIInsights 
+                  analysis={analysis}
+                  isAnalyzing={isAnalyzing}
+                  onAnalyze={handleAnalyze}
+                  hasImages={images.length > 0}
+                  selectedCount={selectedIds.size}
+                  totalCount={images.length}
+                  filename={filename}
+                  setFilename={setFilename}
+                 />
+              </div>
 
-                      <button
-                        onClick={() => setScanMode('document')}
-                        className={`
-                          flex flex-col items-center justify-center
-                          px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
-                          ${scanMode === 'document'
-                            ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
-                            : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
-                          }
-                        `}
-                      >
-                        <FileText className="w-3.5 h-3.5 mb-1.5 opacity-80" />
-                        <span>DOC</span>
-                      </button>
-                    </div>
-                  </div>
+              <div className="lg:col-span-4">
+                <div className="bg-slate-900 rounded-xl border border-slate-700 p-1 sticky top-24 shadow-2xl relative overflow-hidden group">
+                  {/* Metallic gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 to-slate-950/80 pointer-events-none"></div>
                   
-                  {/* Quality Selector */}
-                  <div className="mb-8">
-                    <label className="block text-[10px] font-mono text-slate-500 mb-2 uppercase tracking-wider flex items-center">
-                       <Zap className="w-3 h-3 mr-1.5" />
-                       Compression_Ratio
-                    </label>
-                    <div className="bg-slate-900 p-1 rounded border border-slate-800 flex justify-between relative">
-                      {/* Active slider background (simulated) */}
-                      <div className={`absolute top-1 bottom-1 w-1/3 bg-cyan-900/40 rounded transition-all duration-300 border border-cyan-500/30 ${
-                          quality === 'low' ? 'left-1' : quality === 'medium' ? 'left-[34%]' : 'left-[65.5%]'
-                      }`}></div>
+                  <div className="relative bg-slate-950/90 rounded-lg p-5 border border-slate-800/50 backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                      <div className="flex items-center">
+                        <div className="p-1.5 bg-cyan-950/30 rounded border border-cyan-900/50 mr-3">
+                          <Layers className="w-4 h-4 text-cyan-400" />
+                        </div>
+                        <h3 className="text-sm font-bold text-white font-mono tracking-wide uppercase">Compiler_Config</h3>
+                      </div>
+                      <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
+                    </div>
 
-                      {(['low', 'medium', 'high'] as const).map((q) => (
+                    {/* Scan Mode Selector */}
+                    <div className="mb-6">
+                      <label className="block text-[10px] font-mono text-slate-500 mb-2 uppercase tracking-wider flex items-center">
+                        <Settings2 className="w-3 h-3 mr-1.5" />
+                        Filter_Matrix
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5">
                         <button
-                          key={q}
-                          onClick={() => setQuality(q)}
+                          onClick={() => setScanMode('original')}
                           className={`
-                            relative z-10 flex-1 text-[10px] font-mono font-bold uppercase py-1.5 rounded transition-colors
-                            ${quality === q ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'}
+                            flex flex-col items-center justify-center
+                            px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
+                            ${scanMode === 'original'
+                              ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
+                              : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
+                            }
                           `}
                         >
-                          {q}
+                          <Image className="w-3.5 h-3.5 mb-1.5 opacity-80" />
+                          <span>RAW</span>
                         </button>
-                      ))}
-                    </div>
-                    <div className="mt-2 text-[9px] text-slate-500 font-mono text-right">
-                      {quality === 'low' && "TARGET: MIN_SIZE [EMAIL]"}
-                      {quality === 'medium' && "TARGET: BALANCED [WEB]"}
-                      {quality === 'high' && "TARGET: MAX_RES [PRINT]"}
-                    </div>
-                  </div>
 
-                  <div className="space-y-3">
-                    <button
-                      onClick={handleGeneratePDF}
-                      disabled={isGenerating}
-                      className="w-full relative overflow-hidden flex items-center justify-center px-4 py-4 border border-cyan-600 bg-cyan-900/20 text-sm font-bold text-cyan-400 rounded hover:bg-cyan-900/40 focus:outline-none transition-all shadow-[0_0_20px_rgba(8,145,178,0.1)] group-hover/btn:shadow-[0_0_20px_rgba(8,145,178,0.3)]"
-                    >
-                      <span className="relative z-10 flex items-center tracking-widest uppercase">
-                        {isGenerating ? 'COMPILING...' : (
-                          <>
-                            <Zap className="w-4 h-4 mr-2" />
-                            EXECUTE_COMPILE
-                          </>
-                        )}
-                      </span>
-                    </button>
+                        <button
+                          onClick={() => setScanMode('grayscale')}
+                          className={`
+                            flex flex-col items-center justify-center
+                            px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
+                            ${scanMode === 'grayscale'
+                              ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
+                              : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
+                            }
+                          `}
+                        >
+                          <div className="w-3.5 h-3.5 mb-1.5 rounded-sm bg-gradient-to-br from-slate-200 to-slate-800 opacity-80 border border-slate-600" />
+                          <span>B&W</span>
+                        </button>
 
-                    <button
-                      onClick={handleClearAll}
-                      className="w-full flex items-center justify-center px-4 py-3 border border-slate-800 text-[10px] font-mono text-slate-500 rounded bg-transparent hover:bg-red-950/20 hover:text-red-400 hover:border-red-900/50 transition-all uppercase tracking-wider"
-                    >
-                      <Trash2 className="w-3 h-3 mr-2" />
-                      PURGE_BUFFER
-                    </button>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-slate-800">
-                    <div className="flex justify-between items-center text-[9px] text-slate-600 font-mono uppercase">
-                      <span>Mem_Usage: 12%</span>
-                      <span>Queue: {selectedIds.size > 0 ? selectedIds.size : images.length}</span>
+                        <button
+                          onClick={() => setScanMode('document')}
+                          className={`
+                            flex flex-col items-center justify-center
+                            px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
+                            ${scanMode === 'document'
+                              ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
+                              : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
+                            }
+                          `}
+                        >
+                          <FileText className="w-3.5 h-3.5 mb-1.5 opacity-80" />
+                          <span>DOC</span>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Quality Selector */}
+                    <div className="mb-8">
+                      <label className="block text-[10px] font-mono text-slate-500 mb-2 uppercase tracking-wider flex items-center">
+                         <Zap className="w-3 h-3 mr-1.5" />
+                         Compression_Ratio
+                      </label>
+                      <div className="bg-slate-900 p-1 rounded border border-slate-800 flex justify-between relative">
+                        {/* Active slider background (simulated) */}
+                        <div className={`absolute top-1 bottom-1 w-1/3 bg-cyan-900/40 rounded transition-all duration-300 border border-cyan-500/30 ${
+                            quality === 'low' ? 'left-1' : quality === 'medium' ? 'left-[34%]' : 'left-[65.5%]'
+                        }`}></div>
+
+                        {(['low', 'medium', 'high'] as const).map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => setQuality(q)}
+                            className={`
+                              relative z-10 flex-1 text-[10px] font-mono font-bold uppercase py-1.5 rounded transition-colors
+                              ${quality === q ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'}
+                            `}
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="mt-2 text-[9px] text-slate-500 font-mono text-right">
+                        {quality === 'low' && "TARGET: MIN_SIZE [EMAIL]"}
+                        {quality === 'medium' && "TARGET: BALANCED [WEB]"}
+                        {quality === 'high' && "TARGET: MAX_RES [PRINT]"}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleGeneratePDF}
+                        disabled={isGenerating}
+                        className="w-full relative overflow-hidden flex items-center justify-center px-4 py-4 border border-cyan-600 bg-cyan-900/20 text-sm font-bold text-cyan-400 rounded hover:bg-cyan-900/40 focus:outline-none transition-all shadow-[0_0_20px_rgba(8,145,178,0.1)] group-hover/btn:shadow-[0_0_20px_rgba(8,145,178,0.3)]"
+                      >
+                        <span className="relative z-10 flex items-center tracking-widest uppercase">
+                          {isGenerating ? 'COMPILING...' : (
+                            <>
+                              <Zap className="w-4 h-4 mr-2" />
+                              EXECUTE_COMPILE
+                            </>
+                          )}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={handleClearAll}
+                        className="w-full flex items-center justify-center px-4 py-3 border border-slate-800 text-[10px] font-mono text-slate-500 rounded bg-transparent hover:bg-red-950/20 hover:text-red-400 hover:border-red-900/50 transition-all uppercase tracking-wider"
+                      >
+                        <Trash2 className="w-3 h-3 mr-2" />
+                        PURGE_BUFFER
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t border-slate-800">
+                      <div className="flex justify-between items-center text-[9px] text-slate-600 font-mono uppercase">
+                        <span>Mem_Usage: 12%</span>
+                        <span>Queue: {selectedIds.size > 0 ? selectedIds.size : images.length}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
