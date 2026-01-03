@@ -86,10 +86,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected }) => {
         </div>
         
         <h3 className={`text-xl font-bold tracking-tight transition-colors ${isDragOver ? 'text-white' : 'text-slate-200'}`}>
-          INITIATE_DATA_INGESTION
+          Upload Documents
         </h3>
         <p className="text-slate-500 mt-2 text-sm font-mono max-w-sm text-center">
-          [DRAG_DROP_FILES_HERE] or [CLICK_TO_BROWSE]
+          Drag & Drop files or Click to Browse
         </p>
         
         <div className="mt-8 flex justify-center space-x-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
@@ -99,7 +99,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected }) => {
           </div>
           <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800">
             <ImageIcon className="w-3 h-3 mr-1.5 text-purple-500" />
-            <span>IMG_PROCESSOR_V2</span>
+            <span>IMG_PROCESSOR</span>
           </div>
         </div>
       </div>

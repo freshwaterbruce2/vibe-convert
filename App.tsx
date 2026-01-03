@@ -4,6 +4,7 @@ import ImageUploader from './components/ImageUploader';
 import DocumentList from './components/DocumentList';
 import AIInsights from './components/AIInsights';
 import PreviewModal from './components/PreviewModal';
+import OnboardingHero from './components/OnboardingHero';
 import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
 import { DocImage, AIAnalysisResult, QualityOption, ScanMode } from './types';
 import { analyzeDocuments } from './services/geminiService';
@@ -208,21 +209,25 @@ const App: React.FC = () => {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Intro */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between border-b border-slate-800/60 pb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-1 tracking-tight flex items-center">
-              <Binary className="w-5 h-5 mr-3 text-cyan-500" />
-              DATA_INGESTION_PORTAL
-            </h2>
-            <p className="text-slate-500 text-sm font-light font-mono">
-              SECURE UPLOAD // NEURAL PROCESSING // ARTIFACT GENERATION
-            </p>
-          </div>
-          {images.length > 0 && (
+        {/* Onboarding Hero (Only when empty) */}
+        {images.length === 0 && <OnboardingHero />}
+
+        {/* Dashboard Header (Only when active) */}
+        {images.length > 0 && (
+          <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between border-b border-slate-800/60 pb-6 animate-in slide-in-from-top-4 fade-in duration-500">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-1 tracking-tight flex items-center">
+                <Binary className="w-5 h-5 mr-3 text-cyan-500" />
+                Active Workspace
+              </h2>
+              <p className="text-slate-500 text-sm font-light font-mono">
+                {images.length} FILE{images.length !== 1 && 'S'} QUEUED // READY FOR PROCESSING
+              </p>
+            </div>
+            
             <div className="mt-4 md:mt-0 flex items-center space-x-4 bg-slate-900 px-4 py-2 rounded-lg border border-slate-800">
               <div className="text-right">
-                <p className="text-[10px] text-slate-500 font-mono uppercase">Images Loaded</p>
+                <p className="text-[10px] text-slate-500 font-mono uppercase">Total Files</p>
                 <p className="text-xl font-bold text-white leading-none">{images.length}</p>
               </div>
               <div className="h-8 w-[1px] bg-slate-800"></div>
@@ -231,8 +236,8 @@ const App: React.FC = () => {
                 <p className="text-xl font-bold text-cyan-400 leading-none">{selectedIds.size > 0 ? selectedIds.size : 'ALL'}</p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Upload Area */}
         <ImageUploader onImagesSelected={handleImagesSelected} />
@@ -250,7 +255,7 @@ const App: React.FC = () => {
 
         {/* Actions & AI */}
         {images.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8" ref={resultsRef}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8 animate-in slide-in-from-bottom-8 fade-in duration-700" ref={resultsRef}>
             <div className="lg:col-span-8 space-y-8">
                <AIInsights 
                 analysis={analysis}
