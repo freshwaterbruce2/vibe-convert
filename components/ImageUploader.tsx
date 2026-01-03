@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Upload, Image as ImageIcon, ScanLine } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Upload, Image as ImageIcon, ScanLine, ArrowUpCircle } from 'lucide-react';
 
 interface ImageUploaderProps {
   onImagesSelected: (files: FileList) => void;
@@ -7,15 +7,24 @@ interface ImageUploaderProps {
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       onImagesSelected(e.dataTransfer.files);
     }
@@ -33,13 +42,27 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected }) => {
 
   return (
     <div 
-      className="relative border border-dashed border-slate-700 bg-slate-900/30 rounded-xl p-10 transition-all duration-300 cursor-pointer group hover:border-cyan-500/50 hover:bg-slate-800/50 overflow-hidden"
+      className={`relative group rounded-lg transition-all duration-300 cursor-pointer overflow-hidden ${
+        isDragOver ? 'bg-slate-900/60' : 'bg-slate-900/20'
+      }`}
       onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={handleClick}
     >
-      {/* Decorative Grid Background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] opacity-10 pointer-events-none" />
+      {/* Technical Border Container */}
+      <div className={`absolute inset-0 border transition-colors duration-300 ${
+        isDragOver ? 'border-cyan-500/50' : 'border-slate-800'
+      }`}></div>
+
+      {/* HUD Corners */}
+      <div className={`absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 transition-all duration-300 ${isDragOver ? 'border-cyan-400 w-8 h-8' : 'border-slate-600'}`}></div>
+      <div className={`absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 transition-all duration-300 ${isDragOver ? 'border-cyan-400 w-8 h-8' : 'border-slate-600'}`}></div>
+      <div className={`absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 transition-all duration-300 ${isDragOver ? 'border-cyan-400 w-8 h-8' : 'border-slate-600'}`}></div>
+      <div className={`absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 transition-all duration-300 ${isDragOver ? 'border-cyan-400 w-8 h-8' : 'border-slate-600'}`}></div>
+
+      {/* Background Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] opacity-[0.05] pointer-events-none" />
       
       <input 
         type="file" 
@@ -50,26 +73,33 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelected }) => {
         onChange={handleChange}
       />
       
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="w-20 h-20 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-cyan-500/50 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300">
-          <Upload className="w-8 h-8 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+      <div className="relative z-10 flex flex-col items-center py-16 px-6">
+        <div className={`w-20 h-20 rounded-full bg-slate-950 border flex items-center justify-center mb-6 transition-all duration-500 relative ${
+            isDragOver 
+            ? 'border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.3)] scale-110' 
+            : 'border-slate-700 shadow-inner group-hover:border-slate-600'
+        }`}>
+          {/* Rotating Ring */}
+          <div className={`absolute inset-0 rounded-full border border-dashed border-slate-600 transition-all duration-[10s] animate-[spin_10s_linear_infinite] opacity-30 ${isDragOver ? 'border-cyan-500 opacity-100' : ''}`}></div>
+          
+          <Upload className={`w-8 h-8 transition-colors ${isDragOver ? 'text-cyan-400' : 'text-slate-400'}`} />
         </div>
         
-        <h3 className="text-xl font-medium text-slate-200 group-hover:text-white transition-colors">
-          Initialize Data Stream
+        <h3 className={`text-xl font-bold tracking-tight transition-colors ${isDragOver ? 'text-white' : 'text-slate-200'}`}>
+          INITIATE_DATA_INGESTION
         </h3>
-        <p className="text-slate-500 mt-2 text-sm font-light">
-          Drop source files or click to browse system
+        <p className="text-slate-500 mt-2 text-sm font-mono max-w-sm text-center">
+          [DRAG_DROP_FILES_HERE] or [CLICK_TO_BROWSE]
         </p>
         
-        <div className="mt-8 flex justify-center space-x-4">
-          <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950/50 py-1.5 px-3 rounded border border-slate-800">
-            <ScanLine className="w-3 h-3 mr-2 text-blue-500" />
-            <span>MULTI_PAGE_SUPPORT</span>
+        <div className="mt-8 flex justify-center space-x-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800">
+            <ScanLine className="w-3 h-3 mr-1.5 text-cyan-500" />
+            <span>OCR_READY</span>
           </div>
-          <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950/50 py-1.5 px-3 rounded border border-slate-800">
-            <ImageIcon className="w-3 h-3 mr-2 text-violet-500" />
-            <span>JPG/PNG_READY</span>
+          <div className="flex items-center text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800">
+            <ImageIcon className="w-3 h-3 mr-1.5 text-purple-500" />
+            <span>IMG_PROCESSOR_V2</span>
           </div>
         </div>
       </div>

@@ -8,8 +8,8 @@ const applyFilters = (ctx: CanvasRenderingContext2D, width: number, height: numb
 
   // Contrast factor for 'document' mode
   // Formula: factor = (259 * (contrast + 255)) / (255 * (259 - contrast))
-  // We use a contrast value of around 100 for a good document pop
-  const contrast = 100; 
+  // We use a contrast value of 120 (increased from 100) for crisper text
+  const contrast = 120; 
   const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
 
   for (let i = 0; i < data.length; i += 4) {
@@ -21,11 +21,11 @@ const applyFilters = (ctx: CanvasRenderingContext2D, width: number, height: numb
     let gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
     if (mode === 'document') {
-      // Apply Contrast
+      // Apply Contrast to separate text from background
       gray = factor * (gray - 128) + 128;
       
-      // Simple Brightness Boost to clean up background
-      gray += 20;
+      // Simple Brightness Boost to clean up background noise
+      gray += 25;
 
       // Clamp values
       gray = Math.max(0, Math.min(255, gray));
@@ -50,19 +50,19 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
       // Define constraints based on quality selection
       switch (quality) {
         case 'low':
-          // ~ 1000px width - Good for screen viewing, small file size
+          // ~ 1000px width - Efficient for email/messaging, significantly smaller file
           targetWidth = Math.min(img.width, 1000); 
-          jpgQuality = 0.6;
+          jpgQuality = 0.5;
           break;
         case 'medium':
-          // ~ 1600px width - Standard balanced profile
+          // ~ 1600px width - Standard balanced profile for general documents
           targetWidth = Math.min(img.width, 1600); 
           jpgQuality = 0.75;
           break;
         case 'high':
-          // ~ 2400px width - High quality for print, heavier file
+          // ~ 2400px width - High fidelity for archiving or printing
           targetWidth = Math.min(img.width, 2400); 
-          jpgQuality = 0.85;
+          jpgQuality = 0.92;
           break;
       }
 
