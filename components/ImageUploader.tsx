@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Image as ImageIcon, ScanLine, ArrowUpCircle } from 'lucide-react';
+import { Upload, Image as ImageIcon, ScanLine } from 'lucide-react';
 
 interface ImageUploaderProps {
   onImagesSelected: (files: FileList) => void;

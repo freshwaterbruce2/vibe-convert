@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ArrowUp, ArrowDown, FileImage, CheckCircle2, Circle, GripVertical } from 'lucide-react';
+import { X, ArrowUp, ArrowDown, FileImage, CheckCircle2, Circle } from 'lucide-react';
 import { DocImage } from '../types';
 
 interface DocumentListProps {
@@ -43,17 +43,17 @@ const DocumentList: React.FC<DocumentListProps> = ({ images, selectedIds, onTogg
                 className={`w-full h-full object-cover transition-all duration-500 ${isSelected ? 'scale-105 opacity-90 grayscale-[20%]' : 'opacity-70 group-hover:opacity-100 group-hover:scale-105'}`}
               />
               
-              {/* Scanline effect on image */}
+              {/* Scanline effect on image - Visible on hover only */}
               <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,2px_100%] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity" />
 
-              {/* Selection Checkbox (Top Left) */}
+              {/* Selection Checkbox (Top Left) - Always visible if selected, otherwise hover/mobile visible */}
               <div className="absolute top-2 left-2 z-10">
                 {isSelected ? (
                    <div className="bg-slate-900 text-cyan-400 rounded-sm p-0.5 border border-cyan-500 shadow-lg">
                      <CheckCircle2 className="w-4 h-4" />
                    </div>
                 ) : (
-                   <div className="bg-slate-900/80 text-slate-500 rounded-sm p-0.5 border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <div className="bg-slate-900/80 text-slate-500 rounded-sm p-0.5 border border-slate-700 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                      <Circle className="w-4 h-4" />
                    </div>
                 )}
@@ -64,10 +64,10 @@ const DocumentList: React.FC<DocumentListProps> = ({ images, selectedIds, onTogg
                 ID_{String(index + 1).padStart(2, '0')}
               </div>
 
-              {/* Remove Button */}
+              {/* Remove Button - Always visible on mobile, hover on desktop */}
               <button 
                 onClick={(e) => { e.stopPropagation(); onRemove(img.id); }}
-                className="absolute top-2 right-2 p-1 bg-slate-900/80 text-slate-400 border border-slate-700 rounded-sm hover:bg-red-950 hover:text-red-400 hover:border-red-500/50 transition-all opacity-0 group-hover:opacity-100"
+                className="absolute top-2 right-2 p-1 bg-slate-900/80 text-slate-400 border border-slate-700 rounded-sm hover:bg-red-950 hover:text-red-400 hover:border-red-500/50 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
               >
                 <X className="w-3 h-3" />
               </button>

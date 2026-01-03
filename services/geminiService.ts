@@ -9,7 +9,7 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // Prepare parts: text prompt + image data
+  // Prepare parts: image data only
   const parts: any[] = [];
   
   // Use all provided images for analysis
@@ -26,8 +26,11 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
     });
   }
 
-  const prompt = `
-    Analyze these document images as a "Form Data Extractor".
+  // Add a trigger text to the contents
+  parts.push({ text: "Perform the data extraction task on the provided document images." });
+
+  const systemInstruction = `
+    You are an expert "Form Data Extractor" AI.
     
     1. Identify the document type (e.g., Medical Intake Form, Tax Invoice, Rental Agreement).
     2. Suggest a professional filename in snake_case.
@@ -40,8 +43,6 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
        - Clean up the values (e.g., fix obvious OCR errors in handwriting).
   `;
 
-  parts.push({ text: prompt });
-
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -49,6 +50,7 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
         parts: parts
       },
       config: {
+        systemInstruction: systemInstruction,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

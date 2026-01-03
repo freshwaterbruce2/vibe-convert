@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Loader2, CheckCircle2, FileText, AlertCircle, Terminal, Cpu, Database, Copy, Check, FileJson, Pencil, Trash2, Plus, Save, X, Code2, Activity } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle2, FileText, Terminal, Cpu, Check, Pencil, Trash2, Plus, Save, X, Code2, Activity, ChevronDown } from 'lucide-react';
 import { AIAnalysisResult, ExtractedDataPoint } from '../types';
 
 interface AIInsightsProps {
@@ -23,9 +23,9 @@ const AIInsights: React.FC<AIInsightsProps> = ({
   filename,
   setFilename
 }) => {
-  const [editedName, setEditedName] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
+  const [isDataExpanded, setIsDataExpanded] = useState(true);
   
   // Local state for editable fields
   const [formFields, setFormFields] = useState<ExtractedDataPoint[]>([]);
@@ -41,7 +41,6 @@ const AIInsights: React.FC<AIInsightsProps> = ({
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilename(e.target.value);
-    setEditedName(true);
   };
 
   const copyToClipboard = async (text: string, index: number) => {
@@ -172,85 +171,102 @@ const AIInsights: React.FC<AIInsightsProps> = ({
             {/* Extracted Data Terminal */}
             {formFields.length > 0 && (
               <div className="mt-6">
-                <div className="flex items-center justify-between mb-3 bg-slate-950/80 p-2 rounded-t-md border border-slate-800 border-b-0">
-                  <div className="flex items-center">
-                    <Code2 className="w-4 h-4 text-cyan-500 mr-2" />
-                    <h3 className="text-[10px] font-mono font-bold text-slate-400 uppercase">
-                      Extracted_Data_Stream
-                    </h3>
+                <div 
+                  className={`flex items-center justify-between p-3 bg-slate-950/80 border border-slate-800 cursor-pointer transition-all hover:bg-slate-900 ${isDataExpanded ? 'rounded-t-md border-b-0' : 'rounded-md'}`}
+                  onClick={() => setIsDataExpanded(!isDataExpanded)}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-1 rounded bg-slate-900 border border-slate-800 text-slate-500 transition-transform duration-200 ${isDataExpanded ? 'rotate-180' : ''}`}>
+                       <ChevronDown className="w-3 h-3" />
+                    </div>
+                    <div className="flex items-center">
+                      <Code2 className="w-4 h-4 text-cyan-500 mr-2" />
+                      <h3 className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider select-none">
+                        Extracted_Data_Stream
+                      </h3>
+                    </div>
+                    <div className="px-1.5 py-0.5 rounded bg-cyan-950/30 border border-cyan-900/50 text-[9px] font-mono text-cyan-400">
+                      {formFields.length}_NODES
+                    </div>
                   </div>
+                  
                   <button 
-                    onClick={copyAllAsJSON}
-                    className="text-[10px] font-mono text-slate-500 hover:text-cyan-400 flex items-center transition-colors"
+                    onClick={(e) => { e.stopPropagation(); copyAllAsJSON(); }}
+                    className="text-[10px] font-mono text-slate-500 hover:text-cyan-400 flex items-center transition-colors px-2 py-1 rounded hover:bg-slate-900 border border-transparent hover:border-slate-800"
                   >
-                    {copiedAll ? 'COPIED' : '[COPY_JSON]'}
+                    {copiedAll ? 'COPIED' : 'COPY_JSON'}
                   </button>
                 </div>
                 
-                <div className="bg-black/40 border border-slate-800 rounded-b-md p-1 max-h-[500px] overflow-y-auto font-mono text-sm">
-                  {formFields.map((item, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`group flex items-start p-2 border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30 transition-colors ${editingIndex === idx ? 'bg-slate-800/50' : ''}`}
-                    >
-                      <div className="w-6 text-slate-600 text-[10px] pt-1 select-none">{String(idx + 1).padStart(2, '0')}</div>
-                      
-                      <div className="flex-1 grid grid-cols-12 gap-4">
-                        {editingIndex === idx ? (
-                          // Edit Mode
-                          <>
-                            <div className="col-span-4">
-                               <input 
-                                 type="text" 
-                                 value={tempEditField.label}
-                                 onChange={(e) => setTempEditField({...tempEditField, label: e.target.value})}
-                                 className="w-full bg-slate-900 text-purple-400 border border-slate-700 px-2 py-1 text-xs focus:outline-none focus:border-purple-500"
-                               />
-                            </div>
-                            <div className="col-span-7">
-                               <input 
-                                 type="text" 
-                                 value={tempEditField.value}
-                                 onChange={(e) => setTempEditField({...tempEditField, value: e.target.value})}
-                                 className="w-full bg-slate-900 text-green-400 border border-slate-700 px-2 py-1 text-xs focus:outline-none focus:border-green-500"
-                                 autoFocus
-                               />
-                            </div>
-                            <div className="col-span-1 flex items-center justify-end space-x-1">
-                              <button onClick={() => saveField(idx)} className="text-green-500 hover:text-white"><Save className="w-3.5 h-3.5" /></button>
-                              <button onClick={cancelEditing} className="text-red-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
-                            </div>
-                          </>
-                        ) : (
-                          // View Mode
-                          <>
-                            <div className="col-span-4 text-xs text-purple-400/80 uppercase tracking-tight pt-0.5 truncate" title={item.label}>
-                              {item.label}
-                            </div>
-                            <div 
-                              className="col-span-7 text-slate-300 break-all cursor-pointer hover:text-cyan-400 flex items-center"
-                              onClick={() => copyToClipboard(item.value, idx)}
-                            >
-                              <span className="mr-2">"</span>{item.value}<span className="ml-2">"</span>
-                              {copiedIndex === idx && <Check className="w-3 h-3 ml-2 text-green-500 inline" />}
-                            </div>
-                            <div className="col-span-1 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                               <button onClick={() => startEditing(idx)} className="mr-2 text-slate-500 hover:text-white"><Pencil className="w-3 h-3" /></button>
-                               <button onClick={() => deleteField(idx)} className="text-slate-500 hover:text-red-400"><Trash2 className="w-3 h-3" /></button>
-                            </div>
-                          </>
-                        )}
+                {isDataExpanded && (
+                  <div className="bg-black/40 border border-slate-800 rounded-b-md p-1 max-h-[500px] overflow-y-auto font-mono text-sm relative">
+                    {/* Visual Grid Line Decoration */}
+                    <div className="absolute top-0 left-[34px] bottom-0 w-px bg-slate-800/30 pointer-events-none"></div>
+
+                    {formFields.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`group flex items-start p-2 border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30 transition-colors ${editingIndex === idx ? 'bg-slate-800/50' : ''}`}
+                      >
+                        <div className="w-6 text-slate-600 text-[10px] pt-1 select-none font-bold opacity-50">{String(idx + 1).padStart(2, '0')}</div>
+                        
+                        <div className="flex-1 grid grid-cols-12 gap-4">
+                          {editingIndex === idx ? (
+                            // Edit Mode
+                            <>
+                              <div className="col-span-4">
+                                 <input 
+                                   type="text" 
+                                   value={tempEditField.label}
+                                   onChange={(e) => setTempEditField({...tempEditField, label: e.target.value})}
+                                   className="w-full bg-slate-900 text-purple-400 border border-slate-700 px-2 py-1 text-xs focus:outline-none focus:border-purple-500"
+                                 />
+                              </div>
+                              <div className="col-span-7">
+                                 <input 
+                                   type="text" 
+                                   value={tempEditField.value}
+                                   onChange={(e) => setTempEditField({...tempEditField, value: e.target.value})}
+                                   className="w-full bg-slate-900 text-green-400 border border-slate-700 px-2 py-1 text-xs focus:outline-none focus:border-green-500"
+                                   autoFocus
+                                 />
+                              </div>
+                              <div className="col-span-1 flex items-center justify-end space-x-1">
+                                <button onClick={() => saveField(idx)} className="text-green-500 hover:text-white"><Save className="w-3.5 h-3.5" /></button>
+                                <button onClick={cancelEditing} className="text-red-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+                              </div>
+                            </>
+                          ) : (
+                            // View Mode
+                            <>
+                              <div className="col-span-4 text-xs text-purple-400/80 uppercase tracking-tight pt-0.5 truncate" title={item.label}>
+                                {item.label}
+                              </div>
+                              <div 
+                                className="col-span-7 text-slate-300 break-all cursor-pointer hover:text-cyan-400 flex items-center"
+                                onClick={() => copyToClipboard(item.value, idx)}
+                              >
+                                <span className="mr-2 opacity-50">"</span>{item.value}<span className="ml-2 opacity-50">"</span>
+                                {copiedIndex === idx && <Check className="w-3 h-3 ml-2 text-green-500 inline" />}
+                              </div>
+                              <div className="col-span-1 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <button onClick={() => startEditing(idx)} className="mr-2 text-slate-500 hover:text-white"><Pencil className="w-3 h-3" /></button>
+                                 <button onClick={() => deleteField(idx)} className="text-slate-500 hover:text-red-400"><Trash2 className="w-3 h-3" /></button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  
-                  <button
-                    onClick={addNewField}
-                    className="w-full py-2 text-[10px] text-slate-600 hover:text-purple-400 hover:bg-slate-900/50 border-t border-slate-800/50 flex items-center justify-center font-mono uppercase tracking-widest transition-colors"
-                  >
-                    <Plus className="w-3 h-3 mr-1" /> Add_Data_Point
-                  </button>
-                </div>
+                    ))}
+                    
+                    <button
+                      onClick={addNewField}
+                      className="w-full py-2 text-[10px] text-slate-600 hover:text-purple-400 hover:bg-slate-900/50 border-t border-slate-800/50 flex items-center justify-center font-mono uppercase tracking-widest transition-colors"
+                    >
+                      <Plus className="w-3 h-3 mr-1" /> Add_Data_Point
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import ImageUploader from './components/ImageUploader';
 import DocumentList from './components/DocumentList';
 import AIInsights from './components/AIInsights';
 import PreviewModal from './components/PreviewModal';
+import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
 import { DocImage, AIAnalysisResult, QualityOption, ScanMode } from './types';
 import { analyzeDocuments } from './services/geminiService';
 import { generatePDFBlob } from './services/pdfService';
@@ -17,6 +18,11 @@ const App: React.FC = () => {
   const [filename, setFilename] = useState('paperwork_scan');
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Refs for auto-scrolling
+  const documentListRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   
   // Initialize quality from localStorage
   const [quality, setQuality] = useState<QualityOption>(() => {
@@ -45,6 +51,16 @@ const App: React.FC = () => {
     localStorage.setItem('docuflow_scan_mode', scanMode);
   }, [scanMode]);
 
+  // Toast Helper
+  const addToast = (type: ToastType, title: string, message: string) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, type, title, message }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
   // Helper to convert File to Base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -57,10 +73,14 @@ const App: React.FC = () => {
 
   const handleImagesSelected = useCallback(async (fileList: FileList) => {
     const newImages: DocImage[] = [];
+    let errorCount = 0;
     
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      if (!file.type.startsWith('image/')) continue;
+      if (!file.type.startsWith('image/')) {
+        errorCount++;
+        continue;
+      }
       
       try {
         const base64 = await fileToBase64(file);
@@ -72,12 +92,24 @@ const App: React.FC = () => {
         });
       } catch (err) {
         console.error("Error processing file", file.name, err);
+        errorCount++;
       }
     }
 
-    setImages(prev => [...prev, ...newImages]);
-    // Reset analysis when new images are added to encourage re-analysis
-    setAnalysis(null);
+    if (errorCount > 0) {
+      addToast('error', 'Upload Issue', `Failed to load ${errorCount} file(s). Images only.`);
+    }
+
+    if (newImages.length > 0) {
+      setImages(prev => [...prev, ...newImages]);
+      setAnalysis(null); // Reset analysis on new upload
+      addToast('success', 'Data Ingested', `Successfully loaded ${newImages.length} new image(s).`);
+      
+      // Auto-scroll to list
+      setTimeout(() => {
+        documentListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   }, []);
 
   const handleToggleSelect = (id: string) => {
@@ -118,15 +150,22 @@ const App: React.FC = () => {
       : images;
 
     setIsAnalyzing(true);
+    
+    // Auto-scroll to results area immediately
+    setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+
     try {
       const result = await analyzeDocuments(targetImages);
       setAnalysis(result);
       if (result.suggestedFilename) {
         setFilename(result.suggestedFilename);
       }
+      addToast('success', 'Analysis Complete', 'Document structure and data extracted successfully.');
     } catch (error) {
       console.error("Analysis failed", error);
-      alert("AI Analysis failed. Please check your API key.");
+      addToast('error', 'Neural Link Failed', 'AI Analysis failed. Please check your API key and connection.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -143,9 +182,10 @@ const App: React.FC = () => {
 
       const blob = await generatePDFBlob(targetImages, quality, scanMode);
       setPdfBlob(blob);
+      addToast('success', 'Compilation Successful', 'PDF artifact generated and ready for review.');
     } catch (error) {
       console.error("PDF Generation failed", error);
-      alert("Failed to generate PDF.");
+      addToast('error', 'Compilation Error', 'Failed to generate PDF artifact.');
     } finally {
       setIsGenerating(false);
     }
@@ -157,12 +197,14 @@ const App: React.FC = () => {
       setSelectedIds(new Set());
       setAnalysis(null);
       setFilename('paperwork_scan');
+      addToast('info', 'Buffer Purged', 'All data cleared from local memory.');
     }
   };
 
   return (
     <div className="min-h-screen pb-20 text-slate-200 font-sans selection:bg-cyan-500/30 selection:text-cyan-100">
       <Header />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
@@ -196,17 +238,19 @@ const App: React.FC = () => {
         <ImageUploader onImagesSelected={handleImagesSelected} />
 
         {/* Document Grid */}
-        <DocumentList 
-          images={images} 
-          selectedIds={selectedIds}
-          onToggleSelect={handleToggleSelect}
-          onRemove={handleRemoveImage}
-          onMove={handleMoveImage}
-        />
+        <div ref={documentListRef}>
+          <DocumentList 
+            images={images} 
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onRemove={handleRemoveImage}
+            onMove={handleMoveImage}
+          />
+        </div>
 
         {/* Actions & AI */}
         {images.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8" ref={resultsRef}>
             <div className="lg:col-span-8 space-y-8">
                <AIInsights 
                 analysis={analysis}
