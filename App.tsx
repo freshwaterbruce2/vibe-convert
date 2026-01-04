@@ -9,7 +9,7 @@ import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
 import { DocImage, AIAnalysisResult, QualityOption, ScanMode } from './types';
 import { analyzeDocuments } from './services/geminiService';
 import { generatePDFBlob } from './services/pdfService';
-import { FileOutput, Trash2, Layers, Zap, Image, FileText, Settings2, Check, Sparkles, Binary } from 'lucide-react';
+import { FileOutput, Trash2, Layers, Zap, Image, FileText, Settings2, Check, Sparkles, Binary, Eraser } from 'lucide-react';
 
 const App: React.FC = () => {
   const [images, setImages] = useState<DocImage[]>([]);
@@ -37,8 +37,8 @@ const App: React.FC = () => {
   // Initialize Scan Mode (Default to Document for better results)
   const [scanMode, setScanMode] = useState<ScanMode>(() => {
     const saved = localStorage.getItem('docuflow_scan_mode');
-    if (saved === 'original' || saved === 'grayscale' || saved === 'document') {
-      return saved;
+    if (saved === 'original' || saved === 'grayscale' || saved === 'document' || saved === 'enhanced') {
+      return saved as ScanMode;
     }
     return 'document';
   });
@@ -298,7 +298,7 @@ const App: React.FC = () => {
                         <Settings2 className="w-3 h-3 mr-1.5" />
                         Filter_Matrix
                       </label>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-4 gap-1.5">
                         <button
                           onClick={() => setScanMode('original')}
                           className={`
@@ -342,6 +342,21 @@ const App: React.FC = () => {
                         >
                           <FileText className="w-3.5 h-3.5 mb-1.5 opacity-80" />
                           <span>DOC</span>
+                        </button>
+
+                        <button
+                          onClick={() => setScanMode('enhanced')}
+                          className={`
+                            flex flex-col items-center justify-center
+                            px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
+                            ${scanMode === 'enhanced'
+                              ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
+                              : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
+                            }
+                          `}
+                        >
+                          <Eraser className="w-3.5 h-3.5 mb-1.5 opacity-80" />
+                          <span>CLEAN</span>
                         </button>
                       </div>
                     </div>

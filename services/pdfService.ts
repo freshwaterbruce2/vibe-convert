@@ -1,14 +1,58 @@
 import { DocImage, QualityOption, ScanMode, AIAnalysisResult } from '../types';
 
+const applyShadowRemoval = (ctx: CanvasRenderingContext2D, width: number, height: number, bgData: Uint8ClampedArray) => {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  
+  for (let i = 0; i < data.length; i += 4) {
+    // 1. Get luminance of original pixel
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    
+    // 2. Get luminance of background (blurred) pixel
+    const bgR = bgData[i];
+    const bgG = bgData[i+1];
+    const bgB = bgData[i+2];
+    const bgGray = 0.299 * bgR + 0.587 * bgG + 0.114 * bgB;
+    
+    // 3. Division (Shading Correction)
+    // Formula: Result = (Original / Background) * 255
+    // This removes low-frequency illumination gradients (shadows)
+    let val = 255;
+    if (bgGray > 1) { 
+         val = (gray / bgGray) * 255;
+    }
+    
+    // 4. Contrast Stretch / Normalization
+    // The division often makes the image very light. We need to restore black text.
+    // We define a black point (e.g. 50) and white point (e.g. 230).
+    const blackPoint = 50;
+    const whitePoint = 230;
+    
+    if (val > whitePoint) val = 255;
+    else if (val < blackPoint) val = 0;
+    else {
+         // Linear mapping between black and white points
+         val = ((val - blackPoint) / (whitePoint - blackPoint)) * 255;
+    }
+    
+    data[i] = val;
+    data[i + 1] = val;
+    data[i + 2] = val;
+  }
+  
+  ctx.putImageData(imageData, 0, 0);
+};
+
 const applyFilters = (ctx: CanvasRenderingContext2D, width: number, height: number, mode: ScanMode) => {
-  if (mode === 'original') return;
+  if (mode === 'original' || mode === 'enhanced') return; // Enhanced handled separately
 
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
 
   // Contrast factor for 'document' mode
-  // Formula: factor = (259 * (contrast + 255)) / (255 * (259 - contrast))
-  // We use a contrast value of 120 (increased from 100) for crisper text
   const contrast = 120; 
   const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
 
@@ -50,17 +94,17 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
       // Define constraints based on quality selection
       switch (quality) {
         case 'low':
-          // ~ 1000px width - Efficient for email/messaging, significantly smaller file
+          // ~ 1000px width
           targetWidth = Math.min(img.width, 1000); 
           jpgQuality = 0.5;
           break;
         case 'medium':
-          // ~ 1600px width - Standard balanced profile for general documents
+          // ~ 1600px width
           targetWidth = Math.min(img.width, 1600); 
           jpgQuality = 0.75;
           break;
         case 'high':
-          // ~ 2400px width - High fidelity for archiving or printing
+          // ~ 2400px width
           targetWidth = Math.min(img.width, 2400); 
           jpgQuality = 0.92;
           break;
@@ -80,17 +124,41 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
         return;
       }
 
-      // Fill white background for transparency handling (important for PNGs)
+      // Fill white background
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, targetWidth, targetHeight);
-
-      // Draw with smoothing
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
+
+      // Draw Main Image
       ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
-      // Apply Filter (Grayscale / High Contrast)
-      applyFilters(ctx, targetWidth, targetHeight, scanMode);
+      if (scanMode === 'enhanced') {
+        // Create a temporary canvas to generate the background estimate (blurred image)
+        const blurCanvas = document.createElement('canvas');
+        blurCanvas.width = targetWidth;
+        blurCanvas.height = targetHeight;
+        const blurCtx = blurCanvas.getContext('2d');
+        
+        if (blurCtx) {
+          // A blur radius of ~2-3% of the image width works well for shadow estimation
+          const blurRadius = Math.max(15, Math.floor(targetWidth * 0.025));
+          
+          blurCtx.fillStyle = '#FFFFFF';
+          blurCtx.fillRect(0, 0, targetWidth, targetHeight);
+          blurCtx.filter = `grayscale(100%) blur(${blurRadius}px)`;
+          blurCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+          
+          const bgData = blurCtx.getImageData(0, 0, targetWidth, targetHeight).data;
+          applyShadowRemoval(ctx, targetWidth, targetHeight, bgData);
+        } else {
+          // Fallback if blur context fails
+          applyFilters(ctx, targetWidth, targetHeight, 'document');
+        }
+      } else {
+        // Apply Standard Filters
+        applyFilters(ctx, targetWidth, targetHeight, scanMode);
+      }
 
       const data = canvas.toDataURL('image/jpeg', jpgQuality);
       resolve({ data, width: targetWidth, height: targetHeight });
@@ -153,21 +221,17 @@ export const generatePDFBlob = async (
       
       // Split summary if too long
       const summaryLines = doc.splitTextToSize(analysis.summary, pdfWidth - (margin * 2));
-      // Only take first 2 lines to save space
       const displaySummary = summaryLines.length > 2 ? summaryLines.slice(0, 2) : summaryLines;
       
       doc.text(displaySummary, margin, margin + 11);
       
-      // Draw a subtle line separator
       doc.setDrawColor(200);
       doc.line(margin, margin + 18, pdfWidth - margin, margin + 18);
 
-      // Adjust content area for image
       contentY = headerHeight;
       contentHeight = pdfHeight - headerHeight;
     }
 
-    // Calculate dimensions to fit content area while maintaining aspect ratio
     const imgRatio = processed.width / processed.height;
     const pageRatio = pdfWidth / contentHeight;
 
@@ -177,16 +241,13 @@ export const generatePDFBlob = async (
     let yOffset = contentY;
 
     if (imgRatio > pageRatio) {
-      // Image is wider than available content area
       finalHeight = pdfWidth / imgRatio;
       yOffset = contentY + (contentHeight - finalHeight) / 2;
     } else {
-      // Image is taller than available content area
       finalWidth = contentHeight * imgRatio;
       xOffset = (pdfWidth - finalWidth) / 2;
     }
     
-    // Add margin if it fills the width too tightly
     const margin = 10;
     if (finalWidth > pdfWidth - margin * 2) {
         const scale = (pdfWidth - margin * 2) / finalWidth;
@@ -198,13 +259,11 @@ export const generatePDFBlob = async (
     
     doc.addImage(processed.data, 'JPEG', xOffset, yOffset, finalWidth, finalHeight);
     
-    // Small discrete page number
     doc.setFontSize(8);
     doc.setTextColor(150);
     doc.text(`${i + 1}/${images.length}`, pdfWidth - 10, pdfHeight - 5, { align: 'right' });
   }
 
-  // Explicitly return as PDF blob
   const pdfArrayBuffer = doc.output('arraybuffer');
   return new Blob([pdfArrayBuffer], { type: 'application/pdf' });
 };

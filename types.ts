@@ -18,7 +18,7 @@ export interface AIAnalysisResult {
 }
 
 export type QualityOption = 'low' | 'medium' | 'high';
-export type ScanMode = 'original' | 'grayscale' | 'document';
+export type ScanMode = 'original' | 'grayscale' | 'document' | 'enhanced';
 
 export interface PDFGenerationOptions {
   filename: string;
