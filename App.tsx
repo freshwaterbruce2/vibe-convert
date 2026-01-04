@@ -9,7 +9,7 @@ import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
 import { DocImage, AIAnalysisResult, QualityOption, ScanMode } from './types';
 import { analyzeDocuments } from './services/geminiService';
 import { generatePDFBlob } from './services/pdfService';
-import { FileOutput, Trash2, Layers, Zap, Image, FileText, Settings2, Check, Sparkles, Binary, Eraser } from 'lucide-react';
+import { FileOutput, Trash2, Layers, Zap, Image as ImageIcon, FileText, Settings2, Check, Sparkles, Binary, Eraser } from 'lucide-react';
 
 const App: React.FC = () => {
   const [images, setImages] = useState<DocImage[]>([]);
@@ -311,7 +311,7 @@ const App: React.FC = () => {
                             }
                           `}
                         >
-                          <Image className="w-3.5 h-3.5 mb-1.5 opacity-80" />
+                          <ImageIcon className="w-3.5 h-3.5 mb-1.5 opacity-80" />
                           <span>RAW</span>
                         </button>
 
