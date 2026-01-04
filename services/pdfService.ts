@@ -140,7 +140,11 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
         blurCanvas.height = targetHeight;
         const blurCtx = blurCanvas.getContext('2d');
         
-        if (blurCtx) {
+        // Ensure browser supports the filter API, otherwise fallback to document mode
+        // to avoid a white-out image (since manual gaussian blur is expensive in JS)
+        const isFilterSupported = blurCtx && typeof blurCtx.filter !== 'undefined';
+        
+        if (blurCtx && isFilterSupported) {
           // A blur radius of ~2-3% of the image width works well for shadow estimation
           const blurRadius = Math.max(15, Math.floor(targetWidth * 0.025));
           
@@ -152,7 +156,8 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
           const bgData = blurCtx.getImageData(0, 0, targetWidth, targetHeight).data;
           applyShadowRemoval(ctx, targetWidth, targetHeight, bgData);
         } else {
-          // Fallback if blur context fails
+          // Fallback if blur context or filter API fails
+          console.warn("Canvas Filter API not supported, falling back to Document mode");
           applyFilters(ctx, targetWidth, targetHeight, 'document');
         }
       } else {

@@ -301,6 +301,7 @@ const App: React.FC = () => {
                       <div className="grid grid-cols-4 gap-1.5">
                         <button
                           onClick={() => setScanMode('original')}
+                          title="Original Image"
                           className={`
                             flex flex-col items-center justify-center
                             px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
@@ -316,6 +317,7 @@ const App: React.FC = () => {
 
                         <button
                           onClick={() => setScanMode('grayscale')}
+                          title="Black & White"
                           className={`
                             flex flex-col items-center justify-center
                             px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
@@ -331,6 +333,7 @@ const App: React.FC = () => {
 
                         <button
                           onClick={() => setScanMode('document')}
+                          title="High Contrast Document"
                           className={`
                             flex flex-col items-center justify-center
                             px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
@@ -346,6 +349,7 @@ const App: React.FC = () => {
 
                         <button
                           onClick={() => setScanMode('enhanced')}
+                          title="Shadow Removal & Cleanup"
                           className={`
                             flex flex-col items-center justify-center
                             px-2 py-2.5 text-[9px] font-mono font-bold rounded border text-center uppercase transition-all duration-200 relative
