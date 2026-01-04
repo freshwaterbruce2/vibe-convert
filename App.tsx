@@ -9,7 +9,8 @@ import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
 import { DocImage, AIAnalysisResult, QualityOption, ScanMode } from './types';
 import { analyzeDocuments } from './services/geminiService';
 import { generatePDFBlob } from './services/pdfService';
-import { FileOutput, Trash2, Layers, Zap, Image as ImageIcon, FileText, Settings2, Check, Sparkles, Binary, Eraser } from 'lucide-react';
+import { filterActiveImages } from './utils/docUtils';
+import { Trash2, Layers, Zap, Image as ImageIcon, FileText, Settings2, Sparkles, Binary, Eraser } from 'lucide-react';
 
 const App: React.FC = () => {
   const [images, setImages] = useState<DocImage[]>([]);
@@ -31,16 +32,18 @@ const App: React.FC = () => {
     if (saved === 'low' || saved === 'medium' || saved === 'high') {
       return saved;
     }
-    return 'medium';
+    // Default to HIGH for best quality out of the box
+    return 'high';
   });
 
-  // Initialize Scan Mode (Default to Document for better results)
+  // Initialize Scan Mode (Default to Original to prevent bad filter application)
   const [scanMode, setScanMode] = useState<ScanMode>(() => {
     const saved = localStorage.getItem('docuflow_scan_mode');
     if (saved === 'original' || saved === 'grayscale' || saved === 'document' || saved === 'enhanced') {
       return saved as ScanMode;
     }
-    return 'document';
+    // Default to ORIGINAL to ensure no data loss/artifacting by default
+    return 'original';
   });
 
   // Persist settings
@@ -145,10 +148,8 @@ const App: React.FC = () => {
   const handleAnalyze = async () => {
     if (images.length === 0) return;
     
-    // Determine which images to analyze
-    const targetImages = selectedIds.size > 0 
-      ? images.filter(img => selectedIds.has(img.id))
-      : images;
+    // Use the pure utility function
+    const targetImages = filterActiveImages(images, selectedIds);
 
     setIsAnalyzing(true);
     
@@ -177,9 +178,8 @@ const App: React.FC = () => {
     
     setIsGenerating(true);
     try {
-      const targetImages = selectedIds.size > 0 
-        ? images.filter(img => selectedIds.has(img.id))
-        : images;
+      // Use the pure utility function
+      const targetImages = filterActiveImages(images, selectedIds);
 
       // Pass analysis result to PDF generator to include metadata/headers
       const blob = await generatePDFBlob(targetImages, quality, scanMode, analysis);

@@ -43,7 +43,7 @@ const Header: React.FC = () => {
 
           <div className="flex items-center space-x-2 bg-slate-900/50 px-3 py-1.5 rounded border border-slate-800 hover:border-cyan-500/30 transition-colors">
             <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span className="text-[10px] font-mono font-bold text-slate-300">GEMINI_3_FLASH</span>
+            <span className="text-[10px] font-mono font-bold text-slate-300">GEMINI_3_PRO</span>
             <span className="flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-purple-500"></span>

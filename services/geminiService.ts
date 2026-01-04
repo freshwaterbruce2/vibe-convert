@@ -9,14 +9,19 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // Prepare parts: image data only
+  // Prepare parts: Interleave text markers with images to force the model
+  // to recognize distinct pages and prevent it from skipping the middle/end of the batch.
   const parts: any[] = [];
+  const totalPages = images.length;
   
   // Use all provided images for analysis
-  const imagesToAnalyze = images;
-  
-  for (const img of imagesToAnalyze) {
-    // Remove header from base64 string if present
+  images.forEach((img, index) => {
+    // Add a structural marker before the image
+    parts.push({
+      text: `[DOCUMENT_PAGE_INDEX: ${index + 1}/${totalPages}]`
+    });
+
+    // Add the image data
     const base64Data = img.base64.split(',')[1];
     parts.push({
       inlineData: {
@@ -24,33 +29,49 @@ export const analyzeDocuments = async (images: DocImage[]): Promise<AIAnalysisRe
         data: base64Data
       }
     });
-  }
+  });
 
-  // Add a trigger text to the contents
-  parts.push({ text: "Perform the data extraction task on the provided document images." });
+  // Final trigger prompt
+  parts.push({ 
+    text: `
+      Analyze this ${totalPages}-page document batch. 
+      I have provided markers [DOCUMENT_PAGE_INDEX: X/${totalPages}] for every page. 
+      
+      CRITICAL INSTRUCTION:
+      You MUST process every single page in order.
+      Do not skip pages. Do not summarize until you have read the last page.
+      If a page contains a form field, check box, or signature, it MUST be in the extraction list.
+    ` 
+  });
 
   const systemInstruction = `
-    You are an expert "Form Data Extractor" AI.
+    You are an expert "Form Data Extractor" AI engine specializing in batch processing.
     
-    1. Identify the document type (e.g., Medical Intake Form, Tax Invoice, Rental Agreement).
-    2. Suggest a professional filename in snake_case.
-    3. Write a brief summary.
-    4. DATA EXTRACTION TASK:
-       - Extract ALL visible form fields and their values.
-       - Include both TYPED and HANDWRITTEN text.
-       - Return them as a list of labels and values (e.g., Label: "Patient Name", Value: "John Doe").
-       - If the document is a filled form, capture as many fields as possible (up to 20 key fields) to help the user digitize this record.
-       - Clean up the values (e.g., fix obvious OCR errors in handwriting).
+    TASK:
+    1. Scan the ${totalPages} provided images sequentially.
+    2. **Inventory Phase**: First, identify what is on EACH page (e.g., "Page 1: Questionnaire", "Page 2: Continuation", "Page 16: Signature").
+    3. **Extraction Phase**: Extract all filled-in data.
+       - Handwritten text is HIGH PRIORITY.
+       - Checkboxes (Checked/Yes/No) are HIGH PRIORITY.
+       - Signatures and Dates on the final pages are CRITICAL.
+    
+    OUTPUT RULES:
+    - **Document Type**: Name the entire set based on the first page or dominant form.
+    - **Extracted Data**: Return a FLAT list. 
+       - Label keys with their source page if ambiguous (e.g., "P1_Do_You_Smoke", "P8_Driver_License_Number").
+       - Consolidate repetitive headers, but keep unique form answers.
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: {
         parts: parts
       },
       config: {
         systemInstruction: systemInstruction,
+        // Increased thinking budget for larger batches
+        thinkingConfig: { thinkingBudget: 4096 }, 
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
