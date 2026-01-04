@@ -4,43 +4,40 @@ const applyShadowRemoval = (ctx: CanvasRenderingContext2D, width: number, height
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
   
+  // Define contrast stretching thresholds
+  // Using conservative values to preserve ink colors while cleaning background
+  const blackPoint = 30;
+  const whitePoint = 220;
+
   for (let i = 0; i < data.length; i += 4) {
-    // 1. Get luminance of original pixel
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
-    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    
-    // 2. Get luminance of background (blurred) pixel
+
     const bgR = bgData[i];
-    const bgG = bgData[i+1];
-    const bgB = bgData[i+2];
-    const bgGray = 0.299 * bgR + 0.587 * bgG + 0.114 * bgB;
-    
-    // 3. Division (Shading Correction)
+    const bgG = bgData[i + 1];
+    const bgB = bgData[i + 2];
+
+    // Adaptive thresholding / Division Normalization per channel
     // Formula: Result = (Original / Background) * 255
-    // This removes low-frequency illumination gradients (shadows)
-    let val = 255;
-    if (bgGray > 1) { 
-         val = (gray / bgGray) * 255;
-    }
+    // This removes shadows (illumination gradients) while preserving color (e.g. blue signatures)
+    // It also performs automatic white balancing
     
-    // 4. Contrast Stretch / Normalization
-    // The division often makes the image very light. We need to restore black text.
-    // We define a black point (e.g. 50) and white point (e.g. 230).
-    const blackPoint = 50;
-    const whitePoint = 230;
+    // We clamp the background divisor to 1 to avoid division by zero
+    const normR = (r / Math.max(bgR, 1)) * 255;
+    const normG = (g / Math.max(bgG, 1)) * 255;
+    const normB = (b / Math.max(bgB, 1)) * 255;
+
+    // Helper to stretch contrast
+    const stretch = (val: number) => {
+      if (val > whitePoint) return 255;
+      if (val < blackPoint) return 0;
+      return ((val - blackPoint) / (whitePoint - blackPoint)) * 255;
+    };
     
-    if (val > whitePoint) val = 255;
-    else if (val < blackPoint) val = 0;
-    else {
-         // Linear mapping between black and white points
-         val = ((val - blackPoint) / (whitePoint - blackPoint)) * 255;
-    }
-    
-    data[i] = val;
-    data[i + 1] = val;
-    data[i + 2] = val;
+    data[i] = stretch(normR);
+    data[i + 1] = stretch(normG);
+    data[i + 2] = stretch(normB);
   }
   
   ctx.putImageData(imageData, 0, 0);
@@ -150,7 +147,10 @@ const processImage = (base64: string, quality: QualityOption, scanMode: ScanMode
           
           blurCtx.fillStyle = '#FFFFFF';
           blurCtx.fillRect(0, 0, targetWidth, targetHeight);
-          blurCtx.filter = `grayscale(100%) blur(${blurRadius}px)`;
+          
+          // Note: We use the colored image for the background estimate to support color balancing.
+          blurCtx.filter = `blur(${blurRadius}px)`; 
+          
           blurCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
           
           const bgData = blurCtx.getImageData(0, 0, targetWidth, targetHeight).data;
